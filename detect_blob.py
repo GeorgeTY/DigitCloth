@@ -6,26 +6,26 @@ from global_params import *
 def setDetectionParams():
     blobParams = cv2.SimpleBlobDetector_Params()
 
-    blobParams.minThreshold = 0
-    blobParams.maxThreshold = 255
+    blobParams.minThreshold = minThreshold
+    blobParams.maxThreshold = maxThreshold
 
     if ifVGA:
         blobParams.filterByArea = True
-        blobParams.minArea = 50
-        blobParams.maxArea = 500
+        blobParams.minArea = minArea_VGA
+        blobParams.maxArea = maxArea_VGA
     else:
         blobParams.filterByArea = True
-        blobParams.minArea = 20
-        blobParams.maxArea = 100
+        blobParams.minArea = minArea
+        blobParams.maxArea = maxArea
 
     blobParams.filterByCircularity = True
-    blobParams.minCircularity = 0.7
+    blobParams.minCircularity = minCircularity
 
-    # blobParams.filterByConvexity = True
-    # blobParams.minConvexity = 0.8
+    blobParams.filterByConvexity = False
+    blobParams.minConvexity = minConvexity
 
-    # blobParams.filterByInertia = True
-    # blobParams.minInertiaRatio = 0.01
+    blobParams.filterByInertia = False
+    blobParams.minInertiaRatio = minInertiaRatio
 
     return blobParams
 

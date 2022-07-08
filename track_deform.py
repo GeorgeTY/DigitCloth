@@ -45,6 +45,9 @@ def main():
     plt.plot(points[:, 0], points[:, 1], "o")
     plt.show()
 
+    for triangle in tri.simplices:
+        print(getTriangleArea(points[triangle]))
+
 
 if __name__ == "__main__":
     main()

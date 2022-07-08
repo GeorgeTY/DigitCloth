@@ -32,8 +32,8 @@ def setVideoEncoder(scale=2):
 
 
 def main():
-    digit = connectDigit()
-    for _ in range(30):  # Preheat the digit
+    digit = connectDigit(intensity)
+    for _ in range(15):  # Preheat the digit
         Frm0 = digit.get_frame()
 
     videoOut = setVideoEncoder()
@@ -71,19 +71,35 @@ def main():
         elif getKey == ord("d"):  # Show difference
             print("Press s to save Data to file.")
             while True:
+                tic = time.time()
+
                 Frm = digit.get_frame()
                 Frm_b = Frm
                 keypoints_b, Frm_b_with_keypoints = dotDetection(blobDetector, Frm)
+                if len(keypoints_b) == 0:  # No dot detected cause error
+                    continue
 
-                ## Temporary implementation
+                # Temporary implementation
                 if len(keypoints_a) != len(keypoints_b):
                     continue
 
                 X, Y, TY, G, W, P = dotRegistration(keypoints_a, keypoints_b)
                 Frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, Frm_a, Frm_b)
 
-                tri, Frm_dot_segment = dotSegment(Y, Frm_dot_movement, 2, (0, 255, 255))
-                tri, Frm_dot_segment = dotSegment(X, Frm_dot_segment, 2, (255, 255, 0))
+                tri, Frm_dot_segment = dotSegment(
+                    Y,
+                    cv2.resize(
+                        Frm_b,
+                        (
+                            scale * Frm_b.shape[1],
+                            scale * Frm_b.shape[0],
+                        ),
+                        interpolation=cv2.INTER_AREA,
+                    ),
+                    2,
+                    (0, 255, 255),
+                )
+                # tri, Frm_dot_segment = dotSegment(X, Frm_dot_segment, 2, (255, 255, 0))
 
                 videoOut.write(Frm_dot_segment)
 
@@ -92,7 +108,7 @@ def main():
                 cv2.imshow("Dot Movement", Frm_dot_movement)
                 cv2.moveWindow("Dot Movement", 490, 100)
                 cv2.imshow("Dot Segment", Frm_dot_segment)
-                cv2.moveWindow("Dot Segment", 490, 550)
+                cv2.moveWindow("Dot Segment", 1000, 100)
                 cv2.imshow("Current", Frm_b_with_keypoints)
                 cv2.moveWindow("Current", 100, 550)
                 getKey = cv2.waitKey(1)
@@ -103,6 +119,9 @@ def main():
                     print("Data saved to file.")
                 if getKey == 27 or getKey == ord("q"):  # ESC or q
                     break
+
+                toc = time.time()
+                print("FPS: %.2f" % (1 / (toc - tic)))
             break
 
     ## Turn off the digit
