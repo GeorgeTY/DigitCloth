@@ -3,7 +3,7 @@ import time
 import numpy as np
 from global_params import *
 import matplotlib.pyplot as plt
-from track_deform import dotSegment
+from track_deform import dotSegment, pltDeform
 from connect_digit import connectDigit
 from genetic_calc import calcMatrixM
 from detect_blob import setDetectionParams, dotDetection
@@ -102,6 +102,10 @@ def main():
                 # tri, Frm_dot_segment = dotSegment(X, Frm_dot_segment, 2, (255, 255, 0))
 
                 videoOut.write(Frm_dot_segment)
+
+                pltDeform(Y, tri)
+                plt.ion()
+                plt.pause(1e-12)
 
                 cv2.destroyWindow("Preview")
                 cv2.moveWindow("Original", 100, 100)

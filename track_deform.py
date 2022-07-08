@@ -24,29 +24,18 @@ def dotSegment(points, Frm, scale=2, color=(0, 255, 255)):
             color,
             2,
         )
-        # simplex = np.append(simplex, simplex[0])
-        # print(simplex)
-        # for i in range(len(simplex) - 1):
-        #     cv2.line(
-        #         Frm,
-        #         (int(X[simplex[i]][0] * 2), int(X[simplex[i]][1] * 2)),
-        #         (int(X[simplex[i + 1]][0] * 2), int(X[simplex[i + 1]][1] * 2)),
-        #         (0, 255, 255),
-        #         2,
-        #     )
 
     return tri, Frm
 
 
-def main():
-    points = np.loadtxt("./output/saved_X.out", delimiter=" ")
-    tri = Delaunay(points)
+def pltDeform(points, tri):
+    plt.cla()
 
     plt.triplot(points[:, 0], points[:, 1], tri.simplices)
     plt.plot(points[:, 0], points[:, 1], "o")
     for i in range(len(points)):
         plt.text(points[i][0] + 1, points[i][1] - 2, str(i), fontdict={"color": "gray"})
-    print(len(tri.simplices))
+    # print("Triangles: ", len(tri.simplices))
 
     for triangle in tri.simplices:
         # print(getTriangleArea(points[triangle]))
@@ -60,6 +49,14 @@ def main():
             "%.1f" % getTriangleArea(points[triangle]),
         )
 
+    return
+
+
+def main():
+    points = np.loadtxt("./output/saved_X.out", delimiter=" ")
+    tri = Delaunay(points)
+
+    pltDeform(points, tri)
     plt.show()
 
 
