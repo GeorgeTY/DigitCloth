@@ -17,5 +17,5 @@ minConvexity = 0.8
 minInertiaRatio = 0.01
 
 # for CPD registration
-alpha = 0.002
-beta = 1000
+cpd_alpha = 0.002
+cpd_beta = 800

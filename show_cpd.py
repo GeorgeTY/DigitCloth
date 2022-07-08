@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from pycpd import DeformableRegistration
 import numpy as np
 from global_params import *
+from track_markers import dotMatching
 
 
 def visualize(iteration, error, X, Y, ax):
@@ -39,9 +40,9 @@ def main():
     fig.add_axes([0, 0, 1, 1])
     callback = partial(visualize, ax=fig.axes[0])
 
-    reg = DeformableRegistration(**{"X": X, "Y": Y}, alpha=alpha, beta=beta)
+    reg = DeformableRegistration(**{"X": X, "Y": Y}, alpha=cpd_alpha, beta=cpd_beta)
     TY, (G, W, P) = reg.register(callback)
-    np.savetxt("./output/saved_P.out", P * 100, delimiter=",", fmt="%d")
+    # np.savetxt("./output/saved_P.out", P * 100, delimiter=",", fmt="%d")
     # print(TY)
 
     fig.axes[0].scatter(TY[:, 0], TY[:, 1], color="green", label="Target")

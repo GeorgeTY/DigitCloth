@@ -17,8 +17,8 @@ def connectDigit(intensity=8):
 
 
 def main():
-
-    pass
+    digit = connectDigit()
+    digit.show_view()
 
 
 if __name__ == "__main__":

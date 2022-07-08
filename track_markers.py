@@ -6,6 +6,7 @@ from scipy.spatial import Delaunay
 from pycpd import DeformableRegistration
 from detect_blob import dotDetection
 from global_params import *
+from track_deform import dotSegment, drawSegment, pltDeform, getAreaDiff
 
 
 def dotRegistration(keypoints_a, keypoints_b):
@@ -13,7 +14,7 @@ def dotRegistration(keypoints_a, keypoints_b):
     Y = np.array([keypoint.pt for keypoint in keypoints_b])
 
     TY, (G, W, P) = DeformableRegistration(
-        **{"X": X, "Y": Y}, alpha=alpha, beta=beta
+        **{"X": X, "Y": Y}, alpha=cpd_alpha, beta=cpd_beta
     ).register()  ## CPD registration
 
     return X, Y, TY, G, W, P
@@ -115,33 +116,65 @@ DeformableRegistration.get_registration_parameters = getRegParam
 def main():
 
     tic = time.time()
-    Frm = cv2.imread("./pics/marker_movement/Frm.png")
+    # Frm = cv2.imread("./pics/marker_movement/Frm.png")
     # Frm = cv2.imread("./pics/marker_movement/Frm_Lack.png")
-    Frm0 = cv2.imread("./pics/marker_movement/Frm0.png")
+    # Frm0 = cv2.imread("./pics/marker_movement/Frm0.png")
+
+    Frm = cv2.imread("./pics/digit_movement/Frm.png")
+    Frm0 = cv2.imread("./pics/digit_movement/Frm0.png")
+
     blobDetector = cv2.SimpleBlobDetector_create()
     keypoints_Frm, Frm_with_keypoints = dotDetection(blobDetector, Frm)
     keypoints_Frm0, Frm0_with_keypoints = dotDetection(blobDetector, Frm0)
+    print(len(keypoints_Frm), len(keypoints_Frm0))
 
     X, Y, TY, G, W, P = dotRegistration(keypoints_Frm0, keypoints_Frm)
     Frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, Frm0, Frm)
+
+    for i in range(np.shape(P)[0]):
+        cv2.putText(
+            Frm_dot_movement,
+            str(i),
+            (int(X[i][0]) * scale + 1, int(X[i][1]) * scale + 1),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (0, 255, 255),
+            1,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            Frm_dot_movement,
+            str(i),
+            (int(Y[i][0]) * scale + 1, int(Y[i][1]) * scale + 1),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 255, 0),
+            1,
+            cv2.LINE_AA,
+        )
+
+    cv2.imshow("Frm_dot_movement", Frm_dot_movement)
+    cv2.waitKey(0)
+
     # np.savetxt("./output/saved_TY.out", TY, delimiter=",")
     # np.savetxt("./output/saved_G.out", G, delimiter=",")
     # np.savetxt("./output/saved_W.out", W, delimiter=",")
     np.savetxt("./output/saved_X.out", X, delimiter=" ")
+    np.savetxt("./output/saved_Y.out", Y, delimiter=" ")
     # np.savetxt("./output/saved_P.out", P * 100, delimiter=",", fmt="%d")
 
-    tri = Delaunay(X)
-    for simplex in tri.simplices:
-        simplex = np.append(simplex, simplex[0])
-        print(simplex)
-        for i in range(len(simplex) - 1):
-            cv2.line(
-                Frm_dot_movement,
-                (int(X[simplex[i]][0] * 2), int(X[simplex[i]][1] * 2)),
-                (int(X[simplex[i + 1]][0] * 2), int(X[simplex[i + 1]][1] * 2)),
-                (0, 255, 255),
-                2,
-            )
+    # tri = Delaunay(X)
+    tri, area_a, Frm_dot_movement = dotSegment(X, Frm_dot_movement)
+    tri, area_b, Frm_dot_movement = drawSegment(
+        Y, tri, np.transpose(dotPair), Frm_dot_movement
+    )
+    area_diff = getAreaDiff(area_a, area_b)
+
+    pltDeform(np.matmul(np.transpose(dotPair), Y), tri, area_b, area_diff)
+
+    plt.pause(0.001)
+
+    # drawSegment
 
     # Calculate the distance
     # distance = np.zeros((len(P[0]), len(P[1])))
