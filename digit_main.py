@@ -9,13 +9,17 @@ from genetic_calc import calcMatrixM
 from record_digit import setVideoEncoder
 from detect_blob import setDetectionParams, dotDetection
 from track_markers import dotRegistration, dotMatching
-from track_deform import dotSegment, drawSegment, getAreaDiff, pltDeform
+from track_deform import dotSegment, drawSegment, getAreaDiff, pltDeform, drawArea
 
 
 def main():
-    digit = connectDigit(intensity)
-    for _ in range(15):  # Preheat the digit
-        Frm0 = digit.get_frame()
+    if ifRec:
+        cap = cv2.VideoCapture("./output/recordDigit.mp4")
+        print("Reading video...")
+    else:
+        digit = connectDigit(intensity)
+        for _ in range(15):  # Preheat the digit
+            Frm0 = digit.get_frame()
 
     timestr = time.strftime("%Y%m%d-%H%M%S")
     fileName = "output/markerDetect-{}.mp4".format(timestr)
@@ -28,7 +32,10 @@ def main():
     blobDetector = cv2.SimpleBlobDetector_create(setDetectionParams())
 
     while True:
-        Frm = digit.get_frame()
+        if ifRec:
+            Frm = cap.read()
+        else:
+            Frm = digit.get_frame()
 
         ## Dot detection
         keypoints, Frm_with_keypoints = dotDetection(blobDetector, Frm)
@@ -36,7 +43,10 @@ def main():
         cv2.imshow("Preview", Frm_with_keypoints)
         cv2.moveWindow("Preview", 2020, 100)
 
-        getKey = cv2.waitKey(1)
+        if ifRec:
+            getKey = cv2.waitKey(0)
+        else:
+            getKey = cv2.waitKey(1)
         if getKey == 27 or getKey == ord("q"):  # ESC or q
             break
         if len(keypoints) == 0:  # No dot detected cause error
@@ -58,6 +68,8 @@ def main():
             cv2.imshow("Original", Frm_a_dot_segment)
             cv2.moveWindow("Original", 2020, 550)
         elif getKey == ord("c"):  # Capture difference
+            if ifRec:
+                continue
             digit.show_view(digit.get_frame())
             cv2.waitKey(0)
             break
@@ -66,7 +78,11 @@ def main():
             while True:
                 tic = time.time()
 
-                Frm = digit.get_frame()
+                if ifRec:
+                    Frm = cap.read()
+                else:
+                    Frm = digit.get_frame()
+
                 Frm_b = Frm
                 keypoints_b, Frm_b_with_keypoints = dotDetection(blobDetector, Frm)
                 if len(keypoints_b) == 0:  # No dot detected cause error
@@ -86,10 +102,12 @@ def main():
                     np.transpose(dotPair),
                     Frm_dot_movement,
                 )
+                area_diff = getAreaDiff(area_a, area_b)
+                Frm_b_dot_segment = drawArea(
+                    Y, tri_a, np.transpose(dotPair), area_diff, Frm_b_dot_segment
+                )
 
                 videoOut.write(Frm_b_dot_segment)
-
-                area_diff = getAreaDiff(area_a, area_b)
 
                 pltDeform(np.matmul(np.transpose(dotPair), Y), tri_a, area_b, area_diff)
                 # plt.get_current_fig_manager().window.setGeometry = (200, 550, 480, 640)
@@ -126,7 +144,10 @@ def main():
     else:
         os.remove(videotempName)
     plt.ioff()
-    digit.disconnect()
+    if ifRec:
+        cap.release()
+    else:
+        digit.disconnect()
 
 
 if __name__ == "__main__":

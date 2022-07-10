@@ -1,4 +1,5 @@
 # for Digit
+ifRec = True
 intensity = 5
 # ifVGA = True
 ifVGA = False

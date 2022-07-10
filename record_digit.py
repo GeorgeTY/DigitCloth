@@ -28,12 +28,12 @@ def setVideoEncoder(fileName, ifVGA=False, scale=2):
 
 def main():
     digit = connectDigit(intensity)
-    for _ in range(15):  # Preheat the digit
+    for _ in range(60):  # Preheat the digit
         Frm0 = digit.get_frame()
 
     timestr = time.strftime("%Y%m%d-%H%M%S")
     fileName = "output/recordDigit-{}.mp4".format(timestr)
-    videoOut, videotempName, videofileName = setVideoEncoder(fileName)
+    videoOut, videotempName, videofileName = setVideoEncoder(fileName, scale=1)
 
     while True:
         Frm = digit.get_frame()
