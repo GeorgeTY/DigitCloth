@@ -6,7 +6,7 @@ from scipy.spatial import Delaunay
 from pycpd import DeformableRegistration
 from detect_blob import dotDetection
 from global_params import *
-from track_deform import dotSegment, drawSegment, pltDeform, getAreaDiff
+from track_deform import dotSegment, drawSegment, pltDeform, getAreaDiff, drawArea
 
 
 def dotRegistration(keypoints_a, keypoints_b):
@@ -169,6 +169,9 @@ def main():
         Y, tri, np.transpose(dotPair), Frm_dot_movement
     )
     area_diff = getAreaDiff(area_a, area_b)
+    Frm_dot_movement = drawArea(
+        Y, tri, np.transpose(dotPair), area_diff, Frm_dot_movement
+    )
 
     pltDeform(np.matmul(np.transpose(dotPair), Y), tri, area_b, area_diff)
 
