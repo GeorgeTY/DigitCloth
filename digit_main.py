@@ -6,32 +6,10 @@ from global_params import *
 import matplotlib.pyplot as plt
 from connect_digit import connectDigit
 from genetic_calc import calcMatrixM
+from record_digit import setVideoEncoder
 from detect_blob import setDetectionParams, dotDetection
 from track_markers import dotRegistration, dotMatching
 from track_deform import dotSegment, drawSegment, getAreaDiff, pltDeform
-
-
-def setVideoEncoder(scale=2):
-    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-    videoOut = cv2.VideoWriter()
-    timestr = time.strftime("%Y%m%d-%H%M%S")
-    tempName = "output/tmp.mp4"
-    fileName = "output/markerDetect-{}.mp4".format(timestr)
-    if ifVGA:
-        videoOut.open(
-            tempName,
-            fourcc,
-            30,
-            (480 * scale, 640 * scale),
-        )
-    else:
-        videoOut.open(
-            tempName,
-            fourcc,
-            30,
-            (240 * scale, 320 * scale),
-        )
-    return videoOut, tempName, fileName
 
 
 def main():
@@ -39,7 +17,9 @@ def main():
     for _ in range(15):  # Preheat the digit
         Frm0 = digit.get_frame()
 
-    videoOut, videotempName, videofileName = setVideoEncoder()
+    timestr = time.strftime("%Y%m%d-%H%M%S")
+    fileName = "output/markerDetect-{}.mp4".format(timestr)
+    videoOut, videotempName, videofileName = setVideoEncoder(fileName)
     videoSave = False
     print(
         "Press ESC to quit, O to capture Original, C to capture Difference, D to show Difference."
