@@ -72,7 +72,11 @@ def drawArea(points, tri, dotPair, area_diff, Frm, scale=2):
         simplex_temp = np.zeros_like(simplex)
         for j in range(3):
             simplex_temp[j] = np.argmax(dotPair[simplex[j]][:])
-        color = np.clip((255 - area_diff[i] * 127, 0, area_diff[i] * 127), 0, 255)
+        color = np.clip(
+            (127 - (area_diff[i] - 1) * 2 * 255, 0, 127 + (area_diff[i] - 1) * 2 * 255),
+            0,
+            255,
+        )
         color = (int(color[0]), int(color[1]), int(color[2]))
         cv2.fillPoly(Frm_temp, np.array([X[simplex_temp]]), tuple(color))
     Frm_add = cv2.addWeighted(Frm, 0.2, Frm_temp, 0.8, 0)

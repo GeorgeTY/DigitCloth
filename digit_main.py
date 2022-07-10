@@ -86,10 +86,16 @@ def main():
                 Frm_b = Frm
                 keypoints_b, Frm_b_with_keypoints = dotDetection(blobDetector, Frm)
                 if len(keypoints_b) == 0:  # No dot detected cause error
+                    cv2.imshow("Current", Frm_b_with_keypoints)
+                    cv2.moveWindow("Current", 2020, 550)
+                    cv2.waitKey(1)
                     continue
 
                 ##### Temporary implementation #####
                 if len(keypoints_a) != len(keypoints_b):
+                    cv2.imshow("Current", Frm_b_with_keypoints)
+                    cv2.moveWindow("Current", 2020, 550)
+                    cv2.waitKey(1)
                     continue
                 ####################################
 

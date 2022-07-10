@@ -1,5 +1,5 @@
 # for Digit
-ifRec = True
+ifRec = False
 intensity = 5
 # ifVGA = True
 ifVGA = False
