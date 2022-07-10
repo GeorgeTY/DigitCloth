@@ -6,7 +6,7 @@ from scipy.spatial import Delaunay
 from pycpd import DeformableRegistration
 from detect_blob import dotDetection
 from global_params import *
-from track_deform import dotSegment, drawSegment, pltDeform, getAreaDiff
+from track_deform import dotSegment, drawSegment, pltDeform, getAreaDiff, drawArea
 
 
 def dotRegistration(keypoints_a, keypoints_b):
@@ -116,12 +116,12 @@ DeformableRegistration.get_registration_parameters = getRegParam
 def main():
 
     tic = time.time()
-    # Frm = cv2.imread("./pics/marker_movement/Frm.png")
+    Frm = cv2.imread("./pics/marker_movement/Frm.png")
     # Frm = cv2.imread("./pics/marker_movement/Frm_Lack.png")
-    # Frm0 = cv2.imread("./pics/marker_movement/Frm0.png")
+    Frm0 = cv2.imread("./pics/marker_movement/Frm0.png")
 
-    Frm = cv2.imread("./pics/digit_movement/Frm.png")
-    Frm0 = cv2.imread("./pics/digit_movement/Frm0.png")
+    # Frm = cv2.imread("./pics/digit_movement/Frm.png")
+    # Frm0 = cv2.imread("./pics/digit_movement/Frm0.png")
 
     blobDetector = cv2.SimpleBlobDetector_create()
     keypoints_Frm, Frm_with_keypoints = dotDetection(blobDetector, Frm)
@@ -169,6 +169,9 @@ def main():
         Y, tri, np.transpose(dotPair), Frm_dot_movement
     )
     area_diff = getAreaDiff(area_a, area_b)
+    Frm_dot_movement = drawArea(
+        Y, tri, np.transpose(dotPair), area_diff, Frm_dot_movement
+    )
 
     pltDeform(np.matmul(np.transpose(dotPair), Y), tri, area_b, area_diff)
 

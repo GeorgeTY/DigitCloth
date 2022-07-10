@@ -6,10 +6,13 @@ import matplotlib.pyplot as plt
 
 def getTriangleArea(tp):
     return (
-        tp[0][0] * (tp[1][1] - tp[2][1])
-        + tp[1][0] * (tp[2][1] - tp[0][1])
-        + tp[2][0] * (tp[0][1] - tp[1][1])
-    ) / 2
+        abs(
+            tp[0][0] * (tp[1][1] - tp[2][1])
+            + tp[1][0] * (tp[2][1] - tp[0][1])
+            + tp[2][0] * (tp[0][1] - tp[1][1])
+        )
+        / 2
+    )
 
 
 def dotSegment(points, Frm, scale=2, color=(0, 255, 255)):
@@ -26,7 +29,9 @@ def dotSegment(points, Frm, scale=2, color=(0, 255, 255)):
     return tri, area, Frm
 
 
-def drawSegment(points, tri, dotPair, Frm, scale=2, color=(255, 0, 255)):
+def drawSegment(
+    points, tri, dotPair, Frm, scale=2, color=(255, 0, 255), area_diff=None
+):
     area = np.zeros(len(tri.simplices))
     X = (points * scale).astype(int)
     Frm_temp = Frm.copy()
@@ -48,6 +53,30 @@ def drawSegment(points, tri, dotPair, Frm, scale=2, color=(255, 0, 255)):
         # cv2.waitKey(0)
         area[i] = getTriangleArea(points[simplex_temp])
     return tri, area, Frm_temp
+
+
+def drawArea(points, tri, dotPair, area_diff, Frm, scale=2):
+    """
+    Draw the area of each triangle
+    :param points: the points of the mesh
+    :param tri: the triangulation of the mesh
+    :param dotPair: the dotPair of the mesh
+    :param Frm: the frame to draw on
+    :param scale: scale the points to fit the frame
+    :return: Frm_add with area
+    """
+    X = (points * scale).astype(int)
+    Frm_temp = Frm.copy()
+
+    for i, simplex in enumerate(tri.simplices):
+        simplex_temp = np.zeros_like(simplex)
+        for j in range(3):
+            simplex_temp[j] = np.argmax(dotPair[simplex[j]][:])
+        color = np.clip((255 - area_diff[i] * 127, 0, area_diff[i] * 127), 0, 255)
+        color = (int(color[0]), int(color[1]), int(color[2]))
+        cv2.fillPoly(Frm_temp, np.array([X[simplex_temp]]), tuple(color))
+    Frm_add = cv2.addWeighted(Frm, 0.2, Frm_temp, 0.8, 0)
+    return Frm_add
 
 
 def pltDeform(points, tri, area, area_diff=None):
