@@ -56,6 +56,15 @@ def drawSegment(
 
 
 def drawArea(points, tri, dotPair, area_diff, Frm, scale=2):
+    """
+    Draw the area of each triangle
+    :param points: the points of the mesh
+    :param tri: the triangulation of the mesh
+    :param dotPair: the dotPair of the mesh
+    :param Frm: the frame to draw on
+    :param scale: scale the points to fit the frame
+    :return: Frm_add with area
+    """
     X = (points * scale).astype(int)
     Frm_temp = Frm.copy()
 
@@ -63,10 +72,10 @@ def drawArea(points, tri, dotPair, area_diff, Frm, scale=2):
         simplex_temp = np.zeros_like(simplex)
         for j in range(3):
             simplex_temp[j] = np.argmax(dotPair[simplex[j]][:])
-        color = np.clip((area_diff[i] * 127, 0, 255 - area_diff[i] * 127), 0, 255)
+        color = np.clip((255 - area_diff[i] * 127, 0, area_diff[i] * 127), 0, 255)
         color = (int(color[0]), int(color[1]), int(color[2]))
         cv2.fillPoly(Frm_temp, np.array([X[simplex_temp]]), tuple(color))
-    Frm_add = cv2.addWeighted(Frm, 0.5, Frm_temp, 0.5, 0)
+    Frm_add = cv2.addWeighted(Frm, 0.2, Frm_temp, 0.8, 0)
     return Frm_add
 
 

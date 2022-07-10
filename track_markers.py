@@ -116,12 +116,12 @@ DeformableRegistration.get_registration_parameters = getRegParam
 def main():
 
     tic = time.time()
-    # Frm = cv2.imread("./pics/marker_movement/Frm.png")
+    Frm = cv2.imread("./pics/marker_movement/Frm.png")
     # Frm = cv2.imread("./pics/marker_movement/Frm_Lack.png")
-    # Frm0 = cv2.imread("./pics/marker_movement/Frm0.png")
+    Frm0 = cv2.imread("./pics/marker_movement/Frm0.png")
 
-    Frm = cv2.imread("./pics/digit_movement/Frm.png")
-    Frm0 = cv2.imread("./pics/digit_movement/Frm0.png")
+    # Frm = cv2.imread("./pics/digit_movement/Frm.png")
+    # Frm0 = cv2.imread("./pics/digit_movement/Frm0.png")
 
     blobDetector = cv2.SimpleBlobDetector_create()
     keypoints_Frm, Frm_with_keypoints = dotDetection(blobDetector, Frm)
