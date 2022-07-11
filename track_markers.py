@@ -14,7 +14,7 @@ def dotRegistration(keypoints_a, keypoints_b):
     Y = np.array([keypoint.pt for keypoint in keypoints_b])
 
     TY, (G, W, P) = DeformableRegistration(
-        **{"X": X, "Y": Y}, alpha=cpd_alpha, beta=cpd_beta
+        **{"X": X, "Y": Y, "tolerance": cpd_tolerance}, alpha=cpd_alpha, beta=cpd_beta
     ).register()  ## CPD registration
 
     return X, Y, TY, G, W, P
