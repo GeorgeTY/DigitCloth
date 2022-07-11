@@ -2,6 +2,7 @@ from functools import partial
 import matplotlib.pyplot as plt
 from pycpd import DeformableRegistration
 import numpy as np
+import time
 from global_params import *
 from track_markers import dotMatching
 
@@ -33,6 +34,7 @@ DeformableRegistration.get_registration_parameters = getRegParam
 
 
 def main():
+    tic = time.time()
     X = np.loadtxt("output/saved_X.out")
     Y = np.loadtxt("output/saved_Y.out")
 
@@ -47,6 +49,13 @@ def main():
 
     fig.axes[0].scatter(TY[:, 0], TY[:, 1], color="green", label="Target")
     plt.show()
+
+    # TY, (G, W, P) = DeformableRegistration(
+    #     **{"X": X, "Y": Y}, alpha=cpd_alpha, beta=cpd_beta
+    # ).register()
+
+    toc = time.time()
+    print("Time: {:.2f}".format(toc - tic))
 
 
 if __name__ == "__main__":
