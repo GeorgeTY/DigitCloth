@@ -21,3 +21,7 @@ minInertiaRatio = 0.01
 cpd_tolerance = 0.01  ## 0.001
 cpd_alpha = 0.002  ## 2
 cpd_beta = 800  ## 2
+
+# for edgeDetection
+ad_upper = 1.3
+ad_lower = 0.7
