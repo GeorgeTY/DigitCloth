@@ -133,6 +133,9 @@ def main():
                     np.savetxt("output/saved_P.out", P, delimiter=",")
                     np.savetxt("output/saved_X.out", X, delimiter=" ")
                     np.savetxt("output/saved_Y.out", Y, delimiter=" ")
+                    np.savetxt("output/saved_tri.out", tri_a, delimiter=" ")
+                    np.savetxt("output/saved_area.out", area_b, delimiter=" ")
+                    np.savetxt("output/saved_area_diff.out", area_diff, delimiter=" ")
                     print("Data saved to file.")
                     videoSave = True
                     print("Video saved to output/")

@@ -23,5 +23,10 @@ cpd_alpha = 0.002  ## 2
 cpd_beta = 800  ## 2
 
 # for edgeDetection
+area_threshold = 10
 ad_upper = 1.3
 ad_lower = 0.7
+
+# for linearRegression
+lr_inputSize = 1
+lr_outputSize = 1
