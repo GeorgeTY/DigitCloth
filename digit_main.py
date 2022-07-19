@@ -130,6 +130,7 @@ def main():
                 cv2.moveWindow("Current", 2020, 550)
                 getKey = cv2.waitKey(1)
                 if getKey == ord("s"):
+                    cv2.imwrite("output/saved_Frm.png", Frm_b_dot_segment)
                     np.savetxt("output/saved_P.out", P, delimiter=",")
                     np.savetxt("output/saved_X.out", X, delimiter=" ")
                     np.savetxt("output/saved_Y.out", Y, delimiter=" ")
