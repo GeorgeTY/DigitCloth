@@ -1,15 +1,22 @@
+from turtle import shape
 import cv2
 import numpy as np
+from sympy import re
 from global_params import *
 from matplotlib import pyplot as plt
 
 
-def edgeVisualize(frm, x1, y1, x2, y2):
-    frm = cv2.line(frm, (x1, y1), (x2, y2), (0, 255, 255), 2, cv2.LINE_AA)
-    cv2.imshow("Preview", frm)
-    cv2.moveWindow("Preview", 2020, 100)
-    cv2.waitKey(0)
-    return
+def edgeVisualize(frm, result):
+    frm_result = frm.copy()
+    frm_result = cv2.line(
+        frm_result,
+        (0, np.polyval(result, 0)),
+        (frm.shape[0], np.polyval(result, frm.shape[0])),
+        (0, 255, 255),
+        2,
+        cv2.LINE_AA,
+    )
+    return frm_result
 
 
 def edgeDetection(tri, points, area, area_diff):
@@ -74,7 +81,11 @@ def main():
     area_diff = np.loadtxt("output/saved_area_diff.out", delimiter=",")
     points = np.loadtxt("output/saved_points.out", delimiter=",")
     frm = cv2.imread("output/saved_frm.png")
-    edgeDetection(tri, points, area, area_diff)
+    result = edgeDetection(tri, points, area, area_diff)
+    frm_result = edgeVisualize(frm, result)
+    cv2.imshow("frm_result", frm_result)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
