@@ -26,6 +26,7 @@ cpd_beta = 800  ## 2
 area_threshold = 10
 ad_upper = 1.3
 ad_lower = 0.7
+ad_ratio = 2
 
 # for linearRegression
 lr_inputSize = 1

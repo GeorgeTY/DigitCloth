@@ -24,11 +24,11 @@ def getRegParam(self):
     return self.G, self.W, self.P
 
 
-def dotMatching(X, Y, TY, P, Frm0, Frm, scale=2):
-    Frm_dot_movement = cv2.addWeighted(Frm, 0.65, Frm0, 0.35, 0)
-    Frm_dot_movement = cv2.resize(
-        Frm_dot_movement,
-        (scale * Frm_dot_movement.shape[1], scale * Frm_dot_movement.shape[0]),
+def dotMatching(X, Y, TY, P, frm0, frm, scale=2):
+    frm_dot_movement = cv2.addWeighted(frm, 0.65, frm0, 0.35, 0)
+    frm_dot_movement = cv2.resize(
+        frm_dot_movement,
+        (scale * frm_dot_movement.shape[1], scale * frm_dot_movement.shape[0]),
         interpolation=cv2.INTER_AREA,
     )
 
@@ -94,7 +94,7 @@ def dotMatching(X, Y, TY, P, Frm0, Frm, scale=2):
         for j in range(np.shape(P)[1]):
             if dotPair[i][j] > 0:
                 cv2.arrowedLine(
-                    Frm_dot_movement,
+                    frm_dot_movement,
                     (int(X[j][0]) * scale, int(X[j][1]) * scale),
                     (
                         int(Y[i][0] * scale),
@@ -106,7 +106,7 @@ def dotMatching(X, Y, TY, P, Frm0, Frm, scale=2):
                 )
                 break
 
-    return Frm_dot_movement, dotPair
+    return frm_dot_movement, dotPair
 
 
 ## Add P output to existing function
@@ -116,24 +116,24 @@ DeformableRegistration.get_registration_parameters = getRegParam
 def main():
 
     tic = time.time()
-    Frm = cv2.imread("./pics/marker_movement/Frm.png")
-    # Frm = cv2.imread("./pics/marker_movement/Frm_Lack.png")
-    Frm0 = cv2.imread("./pics/marker_movement/Frm0.png")
+    frm = cv2.imread("./pics/marker_movement/frm.png")
+    # frm = cv2.imread("./pics/marker_movement/frm_Lack.png")
+    frm0 = cv2.imread("./pics/marker_movement/frm0.png")
 
-    # Frm = cv2.imread("./pics/digit_movement/Frm.png")
-    # Frm0 = cv2.imread("./pics/digit_movement/Frm0.png")
+    # frm = cv2.imread("./pics/digit_movement/frm.png")
+    # frm0 = cv2.imread("./pics/digit_movement/frm0.png")
 
     blobDetector = cv2.SimpleBlobDetector_create()
-    keypoints_Frm, Frm_with_keypoints = dotDetection(blobDetector, Frm)
-    keypoints_Frm0, Frm0_with_keypoints = dotDetection(blobDetector, Frm0)
-    print(len(keypoints_Frm), len(keypoints_Frm0))
+    keypoints_frm, frm_with_keypoints = dotDetection(blobDetector, frm)
+    keypoints_frm0, frm0_with_keypoints = dotDetection(blobDetector, frm0)
+    print(len(keypoints_frm), len(keypoints_frm0))
 
-    X, Y, TY, G, W, P = dotRegistration(keypoints_Frm0, keypoints_Frm)
-    Frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, Frm0, Frm)
+    X, Y, TY, G, W, P = dotRegistration(keypoints_frm0, keypoints_frm)
+    frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, frm0, frm)
 
     for i in range(np.shape(P)[0]):
         cv2.putText(
-            Frm_dot_movement,
+            frm_dot_movement,
             str(i),
             (int(X[i][0]) * scale + 1, int(X[i][1]) * scale + 1),
             cv2.FONT_HERSHEY_SIMPLEX,
@@ -143,7 +143,7 @@ def main():
             cv2.LINE_AA,
         )
         cv2.putText(
-            Frm_dot_movement,
+            frm_dot_movement,
             str(i),
             (int(Y[i][0]) * scale + 1, int(Y[i][1]) * scale + 1),
             cv2.FONT_HERSHEY_SIMPLEX,
@@ -153,7 +153,7 @@ def main():
             cv2.LINE_AA,
         )
 
-    cv2.imshow("Frm_dot_movement", Frm_dot_movement)
+    cv2.imshow("frm_dot_movement", frm_dot_movement)
     cv2.waitKey(0)
 
     # np.savetxt("./output/saved_TY.out", TY, delimiter=",")
@@ -164,13 +164,13 @@ def main():
     # np.savetxt("./output/saved_P.out", P * 100, delimiter=",", fmt="%d")
 
     # tri = Delaunay(X)
-    tri, area_a, Frm_dot_movement = dotSegment(X, Frm_dot_movement)
-    tri, area_b, Frm_dot_movement = drawSegment(
-        Y, tri, np.transpose(dotPair), Frm_dot_movement
+    tri, area_a, frm_dot_movement = dotSegment(X, frm_dot_movement)
+    tri, area_b, frm_dot_movement = drawSegment(
+        Y, tri, np.transpose(dotPair), frm_dot_movement
     )
     area_diff = getAreaDiff(area_a, area_b)
-    Frm_dot_movement = drawArea(
-        Y, tri, np.transpose(dotPair), area_diff, Frm_dot_movement
+    frm_dot_movement = drawArea(
+        Y, tri, np.transpose(dotPair), area_diff, frm_dot_movement
     )
 
     pltDeform(np.matmul(np.transpose(dotPair), Y), tri, area_b, area_diff)
@@ -194,7 +194,7 @@ def main():
     #         if dotPair[i][j] > 0:
     #             print("({},{}), ".format(i, j), distance[i][j])
     #             cv2.putText(
-    #                 Frm_dot_movement,
+    #                 frm_dot_movement,
     #                 "%.4f" % P[j][i],
     #                 (int(X[i][0]) * 2 - 5, int(X[i][1]) * 2 - 5),
     #                 cv2.FONT_HERSHEY_SIMPLEX,
@@ -205,7 +205,7 @@ def main():
     #             )
     #             pass
 
-    cv2.imshow("Dot Movement", Frm_dot_movement)
+    cv2.imshow("Dot Movement", frm_dot_movement)
     cv2.moveWindow("Dot Movement", 100, 100)
 
     toc = time.time()

@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from connect_digit import connectDigit
 from genetic_calc import calcMatrixM
 from record_digit import setVideoEncoder
+from detect_edge import edgeDetection, edgeVisualize
 from detect_blob import setDetectionParams, dotDetection
 from track_markers import dotRegistration, dotMatching
 from track_deform import dotSegment, drawSegment, getAreaDiff, pltDeform, drawArea
@@ -19,7 +20,7 @@ def main():
     else:
         digit = connectDigit(intensity)
         for _ in range(15):  # Preheat the digit
-            Frm0 = digit.get_frame()
+            frm0 = digit.get_frame()
 
     timestr = time.strftime("%Y%m%d-%H%M%S")
     fileName = "output/markerDetect-{}.mp4".format(timestr)
@@ -33,14 +34,14 @@ def main():
 
     while True:
         if ifRec:
-            Frm = cap.read()
+            frm = cap.read()
         else:
-            Frm = digit.get_frame()
+            frm = digit.get_frame()
 
         ## Dot detection
-        keypoints, Frm_with_keypoints = dotDetection(blobDetector, Frm)
+        keypoints, frm_with_keypoints = dotDetection(blobDetector, frm)
 
-        cv2.imshow("Preview", Frm_with_keypoints)
+        cv2.imshow("Preview", frm_with_keypoints)
         cv2.moveWindow("Preview", 2020, 100)
 
         if ifRec:
@@ -52,20 +53,20 @@ def main():
         if len(keypoints) == 0:  # No dot detected cause error
             continue
         elif getKey == ord("o"):  # Get original frame
-            Frm_a = Frm
+            frm_a = frm
             keypoints_a = keypoints
-            Frm_a_with_keypoints = Frm_with_keypoints
+            frm_a_with_keypoints = frm_with_keypoints
             print("Original Frame Got.")
 
             X = np.array([keypoint.pt for keypoint in keypoints_a])
-            tri_a, area_a, Frm_a_dot_segment = dotSegment(
+            tri_a, area_a, frm_a_dot_segment = dotSegment(
                 X,
-                Frm_a_with_keypoints,
+                frm_a_with_keypoints,
                 1,
                 (0, 255, 255),
             )
 
-            cv2.imshow("Original", Frm_a_dot_segment)
+            cv2.imshow("Original", frm_a_dot_segment)
             cv2.moveWindow("Original", 2020, 550)
         elif getKey == ord("c"):  # Capture difference
             if ifRec:
@@ -79,41 +80,44 @@ def main():
                 tic = time.time()
 
                 if ifRec:
-                    Frm = cap.read()
+                    frm = cap.read()
                 else:
-                    Frm = digit.get_frame()
+                    frm = digit.get_frame()
 
-                Frm_b = Frm
-                keypoints_b, Frm_b_with_keypoints = dotDetection(blobDetector, Frm)
+                frm_b = frm
+                keypoints_b, frm_b_with_keypoints = dotDetection(blobDetector, frm)
                 if len(keypoints_b) == 0:  # No dot detected cause error
-                    cv2.imshow("Current", Frm_b_with_keypoints)
+                    cv2.imshow("Current", frm_b_with_keypoints)
                     cv2.moveWindow("Current", 2020, 550)
                     cv2.waitKey(1)
                     continue
 
                 ##### Temporary implementation #####
                 if len(keypoints_a) != len(keypoints_b):
-                    cv2.imshow("Current", Frm_b_with_keypoints)
+                    cv2.imshow("Current", frm_b_with_keypoints)
                     cv2.moveWindow("Current", 2020, 550)
                     cv2.waitKey(1)
                     continue
                 ####################################
 
                 X, Y, TY, G, W, P = dotRegistration(keypoints_a, keypoints_b)
-                Frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, Frm_a, Frm_b)
+                frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, frm_a, frm_b)
 
-                tri_b, area_b, Frm_b_dot_segment = drawSegment(
+                tri_b, area_b, frm_b_dot_segment = drawSegment(
                     Y,
                     tri_a,
                     np.transpose(dotPair),
-                    Frm_dot_movement,
+                    frm_dot_movement,
                 )
                 area_diff = getAreaDiff(area_a, area_b)
-                Frm_b_dot_segment = drawArea(
-                    Y, tri_a, np.transpose(dotPair), area_diff, Frm_b_dot_segment
+                frm_b_dot_segment = drawArea(
+                    Y, tri_a, np.transpose(dotPair), area_diff, frm_b_dot_segment
                 )
 
-                videoOut.write(Frm_b_dot_segment)
+                result = edgeDetection(tri_a, keypoints_b, area_b, area_diff)
+                frm_b_edge_detected = edgeVisualize(result, frm_b_dot_segment)
+
+                videoOut.write(frm_b_dot_segment)
 
                 pltDeform(np.matmul(np.transpose(dotPair), Y), tri_a, area_b, area_diff)
                 # plt.get_current_fig_manager().window.setGeometry = (200, 550, 480, 640)
@@ -122,15 +126,15 @@ def main():
 
                 cv2.destroyWindow("Preview")
                 cv2.moveWindow("Original", 2020, 100)
-                cv2.imshow("Dot Movement", Frm_dot_movement)
+                cv2.imshow("Dot Movement", frm_dot_movement)
                 cv2.moveWindow("Dot Movement", 2410, 100)
-                cv2.imshow("Dot Segment", Frm_b_dot_segment)
+                cv2.imshow("Dot Segment", frm_b_dot_segment)
                 cv2.moveWindow("Dot Segment", 2920, 100)
-                cv2.imshow("Current", Frm_b_with_keypoints)
+                cv2.imshow("Current", frm_b_with_keypoints)
                 cv2.moveWindow("Current", 2020, 550)
                 getKey = cv2.waitKey(1)
                 if getKey == ord("s"):
-                    cv2.imwrite("output/saved_Frm.png", Frm_b_dot_segment)
+                    cv2.imwrite("output/saved_frm.png", frm_b_dot_segment)
                     np.savetxt("output/saved_P.out", P, delimiter=",")
                     np.savetxt("output/saved_X.out", X, delimiter=" ")
                     np.savetxt("output/saved_Y.out", Y, delimiter=" ")

@@ -29,19 +29,19 @@ def setVideoEncoder(fileName, ifVGA=False, scale=2):
 def main():
     digit = connectDigit(intensity)
     for _ in range(60):  # Preheat the digit
-        Frm0 = digit.get_frame()
+        frm0 = digit.get_frame()
 
     timestr = time.strftime("%Y%m%d-%H%M%S")
     fileName = "output/recordDigit-{}.mp4".format(timestr)
     videoOut, videotempName, videofileName = setVideoEncoder(fileName, scale=1)
 
     while True:
-        Frm = digit.get_frame()
+        frm = digit.get_frame()
 
-        cv2.imshow("recordDigit", Frm)
+        cv2.imshow("recordDigit", frm)
         cv2.moveWindow("recordDigit", 2020, 100)
 
-        videoOut.write(Frm)
+        videoOut.write(frm)
 
         getKey = cv2.waitKey(1)
         if getKey == ord("s"):

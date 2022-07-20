@@ -35,9 +35,9 @@ def main():
         res = cv2.bitwise_and(frm, frm, mask=mask)
         rev = abs(255 - res)
 
-        keypoints, Frm_with_keypoints = dotDetection(blobDetector, rev)
+        keypoints, frm_with_keypoints = dotDetection(blobDetector, rev)
 
-        cv2.imshow("Keypoints", Frm_with_keypoints)
+        cv2.imshow("Keypoints", frm_with_keypoints)
         cv2.moveWindow("Keypoints", 2020, 500)
 
         cv2.imshow("Preview", rev)

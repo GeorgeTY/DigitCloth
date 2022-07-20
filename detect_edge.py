@@ -4,17 +4,17 @@ from global_params import *
 from matplotlib import pyplot as plt
 
 
-def edgeVisualize(Frm, x1, y1, x2, y2):
-    Frm = cv2.line(Frm, (x1, y1), (x2, y2), (0, 255, 255), 2, cv2.LINE_AA)
-    cv2.imshow("Preview", Frm)
+def edgeVisualize(frm, x1, y1, x2, y2):
+    frm = cv2.line(frm, (x1, y1), (x2, y2), (0, 255, 255), 2, cv2.LINE_AA)
+    cv2.imshow("Preview", frm)
     cv2.moveWindow("Preview", 2020, 100)
     cv2.waitKey(0)
     return
 
 
-def edgeDetection(tri, area, area_diff):
+def edgeDetection(tri, points, area, area_diff):
 
-    triSelect = area > area_threshold and area < ad_upper and area > ad_lower
+    triSelect = area > area_threshold
     triCenter = []
     triEdge = []
     # looking for neighbor edges that has descending area difference
@@ -25,10 +25,29 @@ def edgeDetection(tri, area, area_diff):
                 and triSelect[i]
                 and triSelect[tri.neighbor[i][j]]
                 # Descending area difference
-                and area_diff[i] > 1
-                and area_diff[tri.neighbor[i][j]] < 1
+                and (
+                    area_diff[i] > ad_upper and area_diff[tri.neighbor[i][j]] < ad_lower
+                )
+                or area_diff[i] / area_diff[tri.neighbor[i][j]] > ad_ratio
             ):
-                triEdge.append(tri.simplex[i][tuple(x for x in range(3) if x != j)])
+                triEdge.append(
+                    tuple(
+                        tri.simplex[i][np.array(tuple(x for x in range(3) if x != j))]
+                    )
+                )
+    triEdge = np.array(triEdge)
+
+    for i, edge in enumerate(triEdge):
+        triCenter.append(
+            tuple(
+                (points[edge[0]][0] + points[edge[1]][0]) / 2,
+                (points[edge[0]][1] + points[edge[1]][1]) / 2,
+            )
+        )
+    triCenter = np.array(triCenter)
+
+    result = np.polyfit(triCenter[:, 0], triCenter[:, 1], 1)
+
     # Method 1: Linear Regression
     # for i, area in enumerate(area_diff):
     #     if triSelect:
@@ -46,15 +65,16 @@ def edgeDetection(tri, area, area_diff):
 
     # End Method 3
 
-    return triEdge
+    return result
 
 
 def main():
     tri = np.loadtxt("output/saved_tri.out", delimiter=",")
     area = np.loadtxt("output/saved_area.out", delimiter=",")
     area_diff = np.loadtxt("output/saved_area_diff.out", delimiter=",")
-    Frm = cv2.imread("output/saved_Frm.png")
-    edgeDetection(tri, area, area_diff)
+    points = np.loadtxt("output/saved_points.out", delimiter=",")
+    frm = cv2.imread("output/saved_frm.png")
+    edgeDetection(tri, points, area, area_diff)
 
 
 if __name__ == "__main__":

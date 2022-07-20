@@ -15,58 +15,58 @@ def getTriangleArea(tp):
     )
 
 
-def dotSegment(points, Frm, scale=2, color=(0, 255, 255)):
+def dotSegment(points, frm, scale=2, color=(0, 255, 255)):
     tri = Delaunay(points)
     area = np.zeros(len(tri.simplices))
     X = (points * scale).astype(int)
 
     for i, simplex in enumerate(tri.simplices):
-        cv2.polylines(Frm, np.array([X[simplex]]), True, color, 2, cv2.LINE_AA)
+        cv2.polylines(frm, np.array([X[simplex]]), True, color, 2, cv2.LINE_AA)
         area[i] = getTriangleArea(points[simplex])
-        # cv2.imshow("Frm_temp", Frm)
+        # cv2.imshow("frm_temp", frm)
         # cv2.waitKey(0)
 
-    return tri, area, Frm
+    return tri, area, frm
 
 
 def drawSegment(
-    points, tri, dotPair, Frm, scale=2, color=(255, 0, 255), area_diff=None
+    points, tri, dotPair, frm, scale=2, color=(255, 0, 255), area_diff=None
 ):
     area = np.zeros(len(tri.simplices))
     X = (points * scale).astype(int)
-    Frm_temp = Frm.copy()
+    frm_temp = frm.copy()
 
     for i, simplex in enumerate(tri.simplices):
         simplex_temp = np.zeros_like(simplex)
         for j in range(3):
             simplex_temp[j] = np.argmax(dotPair[simplex[j]][:])
         cv2.polylines(
-            Frm_temp,
+            frm_temp,
             np.array([X[simplex_temp]]),
             True,
             color,
             2,
             cv2.LINE_AA,
         )
-        # cv2.imshow("Frm_temp", Frm_temp)
+        # cv2.imshow("frm_temp", frm_temp)
         # print("in A:", simplex, "in B:", simplex_temp)
         # cv2.waitKey(0)
         area[i] = getTriangleArea(points[simplex_temp])
-    return tri, area, Frm_temp
+    return tri, area, frm_temp
 
 
-def drawArea(points, tri, dotPair, area_diff, Frm, scale=2):
+def drawArea(points, tri, dotPair, area_diff, frm, scale=2):
     """
     Draw the area of each triangle
     :param points: the points of the mesh
     :param tri: the triangulation of the mesh
     :param dotPair: the dotPair of the mesh
-    :param Frm: the frame to draw on
+    :param frm: the frame to draw on
     :param scale: scale the points to fit the frame
-    :return: Frm_add with area
+    :return: frm_add with area
     """
     X = (points * scale).astype(int)
-    Frm_temp = Frm.copy()
+    frm_temp = frm.copy()
 
     for i, simplex in enumerate(tri.simplices):
         simplex_temp = np.zeros_like(simplex)
@@ -78,9 +78,9 @@ def drawArea(points, tri, dotPair, area_diff, Frm, scale=2):
             255,
         )
         color = (int(color[0]), int(color[1]), int(color[2]))
-        cv2.fillPoly(Frm_temp, np.array([X[simplex_temp]]), tuple(color))
-    Frm_add = cv2.addWeighted(Frm, 0.2, Frm_temp, 0.8, 0)
-    return Frm_add
+        cv2.fillPoly(frm_temp, np.array([X[simplex_temp]]), tuple(color))
+    frm_add = cv2.addWeighted(frm, 0.2, frm_temp, 0.8, 0)
+    return frm_add
 
 
 def pltDeform(points, tri, area, area_diff=None):

@@ -30,10 +30,10 @@ def setDetectionParams():
     return blobParams
 
 
-def dotDetection(blobDetector, Frm, circleColor=(0, 0, 255)):
-    keypoints = blobDetector.detect(Frm)
-    Frm_with_keypoints = cv2.drawKeypoints(
-        Frm,
+def dotDetection(blobDetector, frm, circleColor=(0, 0, 255)):
+    keypoints = blobDetector.detect(frm)
+    frm_with_keypoints = cv2.drawKeypoints(
+        frm,
         keypoints,
         np.array([]),
         (50, 50, 150),
@@ -41,15 +41,15 @@ def dotDetection(blobDetector, Frm, circleColor=(0, 0, 255)):
     )
     for keypoint in keypoints:
         cv2.circle(
-            Frm_with_keypoints,
+            frm_with_keypoints,
             (int(keypoint.pt[0]), int(keypoint.pt[1])),
             1,
             circleColor,
             -1,
             cv2.LINE_AA,
         )
-    Frm_with_keypoints = cv2.putText(
-        Frm_with_keypoints,
+    frm_with_keypoints = cv2.putText(
+        frm_with_keypoints,
         "{}".format(len(keypoints)),
         (5, 315),
         cv2.FONT_HERSHEY_COMPLEX,
@@ -58,7 +58,7 @@ def dotDetection(blobDetector, Frm, circleColor=(0, 0, 255)):
         1,
         cv2.LINE_AA,
     )
-    return keypoints, Frm_with_keypoints
+    return keypoints, frm_with_keypoints
 
 
 def main():
