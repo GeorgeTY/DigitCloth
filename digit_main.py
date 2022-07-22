@@ -130,6 +130,13 @@ def main():
 
                 # videoOut.write(frm_b_dot_segment)
 
+                if frm_b_edge_detected is not None:
+                    videoOut.write(frm_b_edge_detected)
+                    cv2.imshow("Edge Detection", frm_b_edge_detected)
+                    cv2.moveWindow("Edge Detection", 3430, 100)
+                else:
+                    videoOut.write(frm_b_dot_segment)
+
                 pltDeform(np.matmul(np.transpose(dotPair), Y), tri_a, area_b, area_diff)
                 # plt.get_current_fig_manager().window.setGeometry = (200, 550, 480, 640)
                 plt.ion()
@@ -141,12 +148,6 @@ def main():
                 cv2.moveWindow("Dot Movement", 2410, 100)
                 cv2.imshow("Dot Segment", frm_b_dot_segment)
                 cv2.moveWindow("Dot Segment", 2920, 100)
-                if frm_b_edge_detected is not None:
-                    videoOut.write(frm_b_edge_detected)
-                    cv2.imshow("Edge Detection", frm_b_edge_detected)
-                    cv2.moveWindow("Edge Detection", 3430, 100)
-                else:
-                    videoOut.write(frm_b_dot_segment)
                 cv2.imshow("Current", frm_b_with_keypoints)
                 cv2.moveWindow("Current", 2020, 550)
                 getKey = cv2.waitKey(1)
@@ -155,7 +156,7 @@ def main():
                     np.savetxt("output/saved_P.out", P, delimiter=",")
                     np.savetxt("output/saved_X.out", X, delimiter=" ")
                     np.savetxt("output/saved_Y.out", Y, delimiter=" ")
-                    np.savetxt("output/saved_tri.out", tri_a, delimiter=" ")
+                    # np.savetxt("output/saved_tri.out", tri_a, delimiter=" ")
                     np.savetxt("output/saved_area.out", area_b, delimiter=" ")
                     np.savetxt("output/saved_area_diff.out", area_diff, delimiter=" ")
                     print("Data saved to file.")
