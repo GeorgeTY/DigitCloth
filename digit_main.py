@@ -96,7 +96,9 @@ def main():
                 if len(keypoints_a) != len(keypoints_b):
                     cv2.imshow("Current", frm_b_with_keypoints)
                     cv2.moveWindow("Current", 2020, 550)
-                    cv2.waitKey(1)
+                    getKet = cv2.waitKey(1)
+                    if getKey == 27 or getKey == ord("q"):
+                        break
                     continue
                 ####################################
 
@@ -114,8 +116,17 @@ def main():
                     Y, tri_a, np.transpose(dotPair), area_diff, frm_b_dot_segment
                 )
 
-                result = edgeDetection(tri_a, keypoints_b, area_b, area_diff)
-                frm_b_edge_detected = edgeVisualize(result, frm_b_dot_segment)
+                result, frm_b_edge_detected = edgeDetection(
+                    tri_a,
+                    Y,
+                    np.transpose(dotPair),
+                    area_b,
+                    area_diff,
+                    frm_b_dot_segment,
+                    scale,
+                )
+                if frm_b_edge_detected is not None:
+                    frm_b_edge_detected = edgeVisualize(frm_b_dot_segment, result)
 
                 videoOut.write(frm_b_dot_segment)
 
@@ -130,6 +141,9 @@ def main():
                 cv2.moveWindow("Dot Movement", 2410, 100)
                 cv2.imshow("Dot Segment", frm_b_dot_segment)
                 cv2.moveWindow("Dot Segment", 2920, 100)
+                if frm_b_edge_detected is not None:
+                    cv2.imshow("Edge Detection", frm_b_edge_detected)
+                    cv2.moveWindow("Edge Detection", 3430, 100)
                 cv2.imshow("Current", frm_b_with_keypoints)
                 cv2.moveWindow("Current", 2020, 550)
                 getKey = cv2.waitKey(1)
