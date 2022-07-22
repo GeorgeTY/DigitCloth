@@ -36,7 +36,7 @@ def main():
         if ifRec:
             frm = cap.read()
         else:
-            frm = digit.get_frame()
+            frm = digit.get_frame().copy()
 
         ## Dot detection
         keypoints, frm_with_keypoints = dotDetection(blobDetector, frm)
@@ -71,7 +71,7 @@ def main():
         elif getKey == ord("c"):  # Capture difference
             if ifRec:
                 continue
-            digit.show_view(digit.get_frame())
+            digit.show_view(digit.get_frame().copy())
             cv2.waitKey(0)
             break
         elif getKey == ord("d"):  # Show difference
@@ -82,7 +82,7 @@ def main():
                 if ifRec:
                     frm = cap.read()
                 else:
-                    frm = digit.get_frame()
+                    frm = digit.get_frame().copy()
 
                 frm_b = frm
                 keypoints_b, frm_b_with_keypoints = dotDetection(blobDetector, frm)
@@ -128,7 +128,7 @@ def main():
                 if frm_b_edge_detected is not None:
                     frm_b_edge_detected = edgeVisualize(frm_b_dot_segment, result)
 
-                videoOut.write(frm_b_dot_segment)
+                # videoOut.write(frm_b_dot_segment)
 
                 pltDeform(np.matmul(np.transpose(dotPair), Y), tri_a, area_b, area_diff)
                 # plt.get_current_fig_manager().window.setGeometry = (200, 550, 480, 640)
@@ -142,8 +142,11 @@ def main():
                 cv2.imshow("Dot Segment", frm_b_dot_segment)
                 cv2.moveWindow("Dot Segment", 2920, 100)
                 if frm_b_edge_detected is not None:
+                    videoOut.write(frm_b_edge_detected)
                     cv2.imshow("Edge Detection", frm_b_edge_detected)
                     cv2.moveWindow("Edge Detection", 3430, 100)
+                else:
+                    videoOut.write(frm_b_dot_segment)
                 cv2.imshow("Current", frm_b_with_keypoints)
                 cv2.moveWindow("Current", 2020, 550)
                 getKey = cv2.waitKey(1)
