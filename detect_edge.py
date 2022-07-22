@@ -53,7 +53,9 @@ def edgeDetection(tri, points, area, area_diff):
         )
     triCenter = np.array(triCenter)
 
-    result = np.polyfit(triCenter[:, 0], triCenter[:, 1], 1)
+    result, result_cov = np.polyfit(
+        triCenter[:, 0], triCenter[:, 1], 1, full=False, cov=True
+    )  #    np.polynomial.polynomial.Polynomial.fit()
 
     # Method 1: Linear Regression
     # for i, area in enumerate(area_diff):
