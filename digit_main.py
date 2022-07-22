@@ -126,7 +126,7 @@ def main():
                     scale,
                 )
                 if frm_b_edge_detected is not None:
-                    frm_b_edge_detected = edgeVisualize(frm_b_dot_segment, result)
+                    frm_b_edge_detected = edgeVisualize(frm_b_edge_detected, result)
 
                 # videoOut.write(frm_b_dot_segment)
 
