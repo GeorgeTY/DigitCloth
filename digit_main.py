@@ -17,6 +17,9 @@ def main():
     if ifRec:
         cap = cv2.VideoCapture("./output/recordDigit.mp4")
         print("Reading video...")
+    if ifCVCap:
+        cap = cv2.VideoCapture(0)
+        print("Reading camera...")
     else:
         digit = connectDigit(intensity)
         for _ in range(15):  # Preheat the digit
@@ -35,6 +38,8 @@ def main():
     while True:
         if ifRec:
             frm = cap.read()
+        if ifCVCap:
+            ret, frm = cap.read()
         else:
             frm = digit.get_frame().copy()
 
@@ -81,6 +86,8 @@ def main():
 
                 if ifRec:
                     frm = cap.read()
+                if ifCVCap:
+                    ret, frm = cap.read()
                 else:
                     frm = digit.get_frame().copy()
 

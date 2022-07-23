@@ -1,5 +1,6 @@
 # for Digit
 ifRec = False
+ifCVCap = False
 intensity = 10
 # ifVGA = True
 ifVGA = False
