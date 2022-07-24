@@ -21,7 +21,10 @@ def main():
         cap = cv2.VideoCapture("./output/recordDigit.mp4")
         print("Reading video...")
     if platform.system() == "Windows":
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
+        cap.set(cv2.CAP_PROP_FPS, 60)
         print("Reading camera...")
     else:
         digit = connectDigit(intensity)
@@ -44,7 +47,6 @@ def main():
         if platform.system() == "Windows":
             ret, frm = cap.read()
             frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
-            frm = cv2.resize(frm, (240, 320), interpolation=cv2.INTER_CUBIC)
         else:
             frm = digit.get_frame().copy()
 
@@ -94,7 +96,6 @@ def main():
                 if platform.system() == "Windows":
                     ret, frm = cap.read()
                     frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
-                    frm = cv2.resize(frm, (240, 320), interpolation=cv2.INTER_CUBIC)
                 else:
                     frm = digit.get_frame().copy()
 
@@ -190,7 +191,7 @@ def main():
     else:
         os.remove(videotempName)
     plt.ioff()
-    if ifRec:
+    if ifRec or platform.system() == "Windows":
         cap.release()
     else:
         digit.disconnect()
