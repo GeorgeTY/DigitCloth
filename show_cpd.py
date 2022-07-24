@@ -42,7 +42,9 @@ def main():
     fig.add_axes([0, 0, 1, 1])
     callback = partial(visualize, ax=fig.axes[0])
 
-    reg = DeformableRegistration(**{"X": X, "Y": Y}, alpha=cpd_alpha, beta=cpd_beta)
+    reg = DeformableRegistration(
+        **{"X": X, "Y": Y, "tolerance": cpd_tolerance}, alpha=cpd_alpha, beta=cpd_beta
+    )
     TY, (G, W, P) = reg.register(callback)
     # np.savetxt("./output/saved_P.out", P * 100, delimiter=",", fmt="%d")
     # print(TY)
