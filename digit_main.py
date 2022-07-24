@@ -24,7 +24,6 @@ def main():
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
-        cap.set(cv2.CAP_PROP_FPS, 60)
         print("Reading camera...")
     else:
         digit = connectDigit(intensity)
@@ -88,6 +87,7 @@ def main():
             break
         elif getKey == ord("d"):  # Show difference
             print("Press s to save Data to file.")
+            cv2.destroyWindow("Preview")
             while True:
                 tic = time.time()
 
@@ -110,7 +110,7 @@ def main():
                 ##### Temporary implementation #####
                 if len(keypoints_a) != len(keypoints_b):
                     cv2.imshow("Current", frm_b_with_keypoints)
-                    cv2.moveWindow("Current", 2020, 550)
+                    cv2.moveWindow("Current", 2020, 480)
                     getKet = cv2.waitKey(1)
                     if getKey == 27 or getKey == ord("q"):
                         break
@@ -157,14 +157,13 @@ def main():
                 plt.ion()
                 plt.pause(1e-12)
 
-                # cv2.destroyWindow("Preview")
                 cv2.moveWindow("Original", 2020, 100)
                 cv2.imshow("Dot Movement", frm_dot_movement)
-                cv2.moveWindow("Dot Movement", 2410, 100)
+                cv2.moveWindow("Dot Movement", 2280, 100)
                 cv2.imshow("Dot Segment", frm_b_dot_segment)
-                cv2.moveWindow("Dot Segment", 2920, 100)
+                cv2.moveWindow("Dot Segment", 2780, 100)
                 cv2.imshow("Current", frm_b_with_keypoints)
-                cv2.moveWindow("Current", 2020, 550)
+                cv2.moveWindow("Current", 2020, 480)
                 getKey = cv2.waitKey(1)
                 if getKey == ord("s"):
                     cv2.imwrite("output/saved_frm.png", frm_b_dot_segment)
