@@ -1,10 +1,13 @@
 import os
 import cv2
 import time
+import platform
 import numpy as np
 from global_params import *
 import matplotlib.pyplot as plt
-from connect_digit import connectDigit
+
+if not platform.system() == "Windows":
+    from connect_digit import connectDigit
 from genetic_calc import calcMatrixM
 from record_digit import setVideoEncoder
 from detect_edge import edgeDetection, edgeVisualize
@@ -17,7 +20,7 @@ def main():
     if ifRec:
         cap = cv2.VideoCapture("./output/recordDigit.mp4")
         print("Reading video...")
-    if ifCVCap:
+    if platform.system() == "Windows":
         cap = cv2.VideoCapture(0)
         print("Reading camera...")
     else:
@@ -38,8 +41,10 @@ def main():
     while True:
         if ifRec:
             frm = cap.read()
-        if ifCVCap:
+        if platform.system() == "Windows":
             ret, frm = cap.read()
+            frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            frm = cv2.resize(frm, (240, 320), interpolation=cv2.INTER_CUBIC)
         else:
             frm = digit.get_frame().copy()
 
@@ -86,8 +91,10 @@ def main():
 
                 if ifRec:
                     frm = cap.read()
-                if ifCVCap:
+                if platform.system() == "Windows":
                     ret, frm = cap.read()
+                    frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                    frm = cv2.resize(frm, (240, 320), interpolation=cv2.INTER_CUBIC)
                 else:
                     frm = digit.get_frame().copy()
 
@@ -149,7 +156,7 @@ def main():
                 plt.ion()
                 plt.pause(1e-12)
 
-                cv2.destroyWindow("Preview")
+                # cv2.destroyWindow("Preview")
                 cv2.moveWindow("Original", 2020, 100)
                 cv2.imshow("Dot Movement", frm_dot_movement)
                 cv2.moveWindow("Dot Movement", 2410, 100)

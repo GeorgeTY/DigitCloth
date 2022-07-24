@@ -1,8 +1,11 @@
 import sys
 import cv2
+import platform
 import numpy as np
 from global_params import *
-import digit_interface as Digit
+
+if not platform.system() == "Windows":
+    import digit_interface as Digit
 from detect_blob import setDetectionParams, dotDetection
 
 
