@@ -103,7 +103,7 @@ def main():
                 keypoints_b, frm_b_with_keypoints = dotDetection(blobDetector, frm)
                 if len(keypoints_b) == 0:  # No dot detected cause error
                     cv2.imshow("Current", frm_b_with_keypoints)
-                    cv2.moveWindow("Current", 2020, 550)
+                    cv2.moveWindow("Current", 2020, 480)
                     cv2.waitKey(1)
                     continue
 
@@ -148,7 +148,7 @@ def main():
                 if frm_b_edge_detected is not None:
                     videoOut.write(frm_b_edge_detected)
                     cv2.imshow("Edge Detection", frm_b_edge_detected)
-                    cv2.moveWindow("Edge Detection", 3430, 100)
+                    cv2.moveWindow("Edge Detection", 3280, 100)
                 else:
                     videoOut.write(frm_b_dot_segment)
 
