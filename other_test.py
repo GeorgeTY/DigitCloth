@@ -1,88 +1,41 @@
-import copy
+import cv2
 import numpy as np
-import open3d as o3
-import transforms3d as t3d
 
+camera = cv2.VideoCapture(0)
 
-def estimate_normals(pcd, params):
-    pcd.estimate_normals(search_param=params)
-    pcd.orient_normals_to_align_with_direction()
+es = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
+kernel = np.ones((5, 5), np.uint8)
+background = None
 
+while True:
+    grabbed, frame_lwpCV = camera.read()
 
-def prepare_source_and_target_rigid_3d(
-    source_filename,
-    noise_amp=0.001,
-    n_random=500,
-    orientation=np.deg2rad([0.0, 0.0, 30.0]),
-    translation=np.zeros(3),
-    voxel_size=0.005,
-    normals=False,
-):
-    source = o3.io.read_point_cloud(source_filename)
-    source = source.voxel_down_sample(voxel_size=voxel_size)
-    print(source)
-    target = copy.deepcopy(source)
-    tp = np.asarray(target.points)
-    np.random.shuffle(tp)
-    rg = 1.5 * (tp.max(axis=0) - tp.min(axis=0))
-    rands = (np.random.rand(n_random, 3) - 0.5) * rg + tp.mean(axis=0)
-    target.points = o3.utility.Vector3dVector(
-        np.r_[tp + noise_amp * np.random.randn(*tp.shape), rands]
+    gray_lwpCV = cv2.cvtColor(frame_lwpCV, cv2.COLOR_BGR2GRAY)
+    gray_lwpCV = cv2.GaussianBlur(gray_lwpCV, (21, 21), 0)
+
+    if background is None:
+        background = gray_lwpCV
+        continue
+
+    diff = cv2.absdiff(background, gray_lwpCV)
+    diff = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1]
+    diff = cv2.dilate(diff, es, iterations=2)
+
+    contours, hierarchy = cv2.findContours(
+        diff.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
-    ans = np.identity(4)
-    ans[:3, :3] = t3d.euler.euler2mat(*orientation)
-    ans[:3, 3] = translation
-    target.transform(ans)
-    if normals:
-        estimate_normals(
-            source, o3.geometry.KDTreeSearchParamHybrid(radius=0.3, max_nn=50)
-        )
-        estimate_normals(
-            target, o3.geometry.KDTreeSearchParamHybrid(radius=0.3, max_nn=50)
-        )
-    return source, target
+    for c in contours:
+        if cv2.contourArea(c) < 1000:
+            continue
+        (x, y, w, h) = cv2.boundingRect(c)
+        cv2.rectangle(frame_lwpCV, (x, y), (x + w, y + h), (0, 255, 0), 2)
 
+    cv2.imshow("contours", frame_lwpCV)
+    cv2.imshow("diff", diff)
 
-def prepare_source_and_target_nonrigid_2d(source_filename, target_filename):
-    source = np.loadtxt(source_filename)
-    target = np.loadtxt(target_filename)
-    return source, target
+    key = cv2.waitKey(1)
+    if key == 27:
+        break
 
-
-def prepare_source_and_target_nonrigid_3d(
-    source_filename, target_filename, voxel_size=5.0
-):
-    source = o3.geometry.PointCloud()
-    target = o3.geometry.PointCloud()
-    source.points = o3.utility.Vector3dVector(np.loadtxt(source_filename))
-    target.points = o3.utility.Vector3dVector(np.loadtxt(target_filename))
-    source = source.voxel_down_sample(voxel_size=voxel_size)
-    target = target.voxel_down_sample(voxel_size=voxel_size)
-    print(source)
-    print(target)
-    return source, target
-
-
-import time
-import cupy as cp
-from probreg import cpd
-from probreg import callbacks
-import matplotlib.pyplot as plt
-
-# source, target = cp.asarray(
-#     prepare_source_and_target_nonrigid_2d(
-#         "output/saved_X.out",
-#         "output/saved_Y.out",
-#     ),
-#     dtype=cp.float64,
-# )
-tic = time.time()
-source, target = prepare_source_and_target_nonrigid_2d(
-    "output/saved_X.out",
-    "output/saved_Y.out",
-)
-# cbs = [callbacks.Plot2DCallback(source, target)]
-tf_param, _, _ = cpd.registration_cpd(source, target, "nonrigid", use_cuda=True)
-toc = time.time()
-print("Time:", toc - tic)
-# plt.show()
+cv2.destroyAllWindows()
+camera.release()
