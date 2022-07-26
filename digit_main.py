@@ -6,7 +6,7 @@ import numpy as np
 from global_params import *
 import matplotlib.pyplot as plt
 
-if not platform.system() == "Windows":
+if not (platform.system() == "Windows" or platform.system() == "Darwin"):
     from connect_digit import connectDigit
 
 from fix_blob import fixMissingBlob
@@ -22,7 +22,7 @@ def main():
     if ifRec:
         cap = cv2.VideoCapture("./output/recordDigit.mp4")
         print("Reading video...")
-    if platform.system() == "Windows":
+    if platform.system() == "Windows" or platform.system() == "Darwin":
         cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
@@ -45,7 +45,7 @@ def main():
     while True:
         if ifRec:
             frm = cap.read()
-        if platform.system() == "Windows":
+        if platform.system() == "Windows" or platform.system() == "Darwin":
             ret, frm = cap.read()
             frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
         else:
@@ -95,7 +95,7 @@ def main():
 
                 if ifRec:
                     frm = cap.read()
-                if platform.system() == "Windows":
+                if platform.system() == "Windows" or platform.system() == "Darwin":
                     ret, frm = cap.read()
                     frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 else:
@@ -195,7 +195,7 @@ def main():
     else:
         os.remove(videotempName)
     plt.ioff()
-    if ifRec or platform.system() == "Windows":
+    if ifRec or platform.system() == "Windows" or platform.system() == "Darwin":
         cap.release()
     else:
         digit.disconnect()

@@ -4,7 +4,7 @@ import platform
 import numpy as np
 from global_params import *
 
-if not platform.system() == "Windows":
+if not (platform.system() == "Windows" or platform.system() == "Darwin"):
     import digit_interface as Digit
 from detect_blob import setDetectionParams, dotDetection
 
