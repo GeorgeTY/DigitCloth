@@ -109,6 +109,10 @@ def dotMatching(X, Y, TY, P, frm0, frm, scale=2):
     return frm_dot_movement, dotPair
 
 
+def dotMatchingKNN():
+    return
+
+
 ## Add P output to existing function
 DeformableRegistration.get_registration_parameters = getRegParam
 

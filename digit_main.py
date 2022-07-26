@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 
 if not platform.system() == "Windows":
     from connect_digit import connectDigit
+
+from fix_blob import fixMissingBlob
 from genetic_calc import calcMatrixM
 from record_digit import setVideoEncoder
 from detect_edge import edgeDetection, edgeVisualize
@@ -78,7 +80,7 @@ def main():
             )
 
             cv2.imshow("Original", frm_a_dot_segment)
-            cv2.moveWindow("Original", 2020, 550)
+            cv2.moveWindow("Original", 2020, 480)
         elif getKey == ord("c"):  # Capture difference
             if ifRec:
                 continue
@@ -115,6 +117,8 @@ def main():
                     if getKey == 27 or getKey == ord("q"):
                         break
                     continue
+
+                    fixMissingBlob()
                 ####################################
 
                 X, Y, TY, G, W, P = dotRegistration(keypoints_a, keypoints_b)
@@ -126,6 +130,7 @@ def main():
                     np.transpose(dotPair),
                     frm_dot_movement,
                 )
+                print("avg area:", np.average(area_b))
                 area_diff = getAreaDiff(area_a, area_b)
                 frm_b_dot_segment = drawArea(
                     Y, tri_a, np.transpose(dotPair), area_diff, frm_b_dot_segment
