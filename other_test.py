@@ -1,41 +1,33 @@
-import cv2
-import numpy as np
+# dbscan clustering
+import time
+from numpy import unique
+from numpy import where
+from sklearn.datasets import make_classification
+from sklearn.cluster import DBSCAN
+from matplotlib import pyplot
 
-camera = cv2.VideoCapture(0)
-
-es = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2))
-kernel = np.ones((5, 5), np.uint8)
-background = None
-
-while True:
-    grabbed, frame_lwpCV = camera.read()
-
-    gray_lwpCV = cv2.cvtColor(frame_lwpCV, cv2.COLOR_BGR2GRAY)
-    gray_lwpCV = cv2.GaussianBlur(gray_lwpCV, (21, 21), 0)
-
-    if background is None:
-        background = gray_lwpCV
-        continue
-
-    diff = cv2.absdiff(background, gray_lwpCV)
-    diff = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)[1]
-    diff = cv2.dilate(diff, es, iterations=2)
-
-    contours, hierarchy = cv2.findContours(
-        diff.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
-    )
-    for c in contours:
-        if cv2.contourArea(c) < 1000:
-            continue
-        (x, y, w, h) = cv2.boundingRect(c)
-        cv2.rectangle(frame_lwpCV, (x, y), (x + w, y + h), (0, 255, 0), 2)
-
-    cv2.imshow("contours", frame_lwpCV)
-    cv2.imshow("diff", diff)
-
-    key = cv2.waitKey(1)
-    if key == 27:
-        break
-
-cv2.destroyAllWindows()
-camera.release()
+# define dataset
+X, _ = make_classification(
+    n_samples=1000,
+    n_features=2,
+    n_informative=2,
+    n_redundant=0,
+    n_clusters_per_class=1,
+    random_state=4,
+)
+tic = time.time()
+# define the model
+model = DBSCAN(eps=0.3, min_samples=9)
+# fit model and predict clusters
+yhat = model.fit_predict(X)
+# retrieve unique clusters
+clusters = unique(yhat)
+# create scatter plot for samples from each cluster
+print("Time:", time.time() - tic)
+for cluster in clusters:
+    # get row indexes for samples with this cluster
+    row_ix = where(yhat == cluster)
+    # create scatter of these samples
+    pyplot.scatter(X[row_ix, 0], X[row_ix, 1])
+# show the plot
+pyplot.show()

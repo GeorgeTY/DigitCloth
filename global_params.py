@@ -23,6 +23,7 @@ cpd_alpha = 0.002  ## 2
 cpd_beta = 800  ## 2
 
 # for edgeDetection
+ed_method = 2
 area_threshold = 40
 ad_upper = 1.3
 ad_lower = 0.7

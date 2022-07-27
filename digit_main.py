@@ -143,10 +143,14 @@ def main():
                     area_b,
                     area_diff,
                     frm_b_dot_segment,
-                    scale,
+                    method=ed_method,
+                    deg=1,
+                    scale=scale,
                 )
-                if frm_b_edge_detected is not None:
-                    frm_b_edge_detected = edgeVisualize(frm_b_edge_detected, result)
+                if frm_b_edge_detected is not None and result is not None:
+                    frm_b_edge_detected = edgeVisualize(
+                        frm_b_edge_detected, result, method=ed_method
+                    )
 
                 # videoOut.write(frm_b_dot_segment)
 
