@@ -6,43 +6,42 @@ from matplotlib import pyplot as plt
 
 
 def edgeVisualize(frm, result, method=1, scale=1):
-    match method:
-        case 1:
-            frm_result = frm.copy()
+    if method == 1:
+        frm_result = frm.copy()
+        x1 = int(0 * scale)
+        y1 = int(int(np.polyval(result, 0)) * scale)
+        x2 = int(frm.shape[0] * scale)
+        y2 = int(int(np.polyval(result, frm.shape[0])) * scale)
+        frm_result = cv2.line(
+            frm_result,
+            (x1, y1),
+            (x2, y2),
+            (0, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
+        return frm_result
+
+    elif method == 2:
+        frm_result = frm.copy()
+        for line in result:
             x1 = int(0 * scale)
-            y1 = int(int(np.polyval(result, 0)) * scale)
+            y1 = int(int(np.polyval(line, 0)) * scale)
             x2 = int(frm.shape[0] * scale)
-            y2 = int(int(np.polyval(result, frm.shape[0])) * scale)
+            y2 = int(int(np.polyval(line, frm.shape[0])) * scale)
             frm_result = cv2.line(
                 frm_result,
                 (x1, y1),
                 (x2, y2),
-                (0, 255, 255),
+                (
+                    np.random.randint(0, 255),
+                    np.random.randint(0, 255),
+                    np.random.randint(0, 255),
+                ),
                 2,
                 cv2.LINE_AA,
             )
-            return frm_result
-
-        case 2:
-            frm_result = frm.copy()
-            for line in result:
-                x1 = int(0 * scale)
-                y1 = int(int(np.polyval(line, 0)) * scale)
-                x2 = int(frm.shape[0] * scale)
-                y2 = int(int(np.polyval(line, frm.shape[0])) * scale)
-                frm_result = cv2.line(
-                    frm_result,
-                    (x1, y1),
-                    (x2, y2),
-                    (
-                        np.random.randint(0, 255),
-                        np.random.randint(0, 255),
-                        np.random.randint(0, 255),
-                    ),
-                    2,
-                    cv2.LINE_AA,
-                )
-            return frm_result
+        return frm_result
 
 
 def edgeDetection(tri, points, dotPair, area, area_diff, frm, method=1, deg=1, scale=2):
@@ -117,51 +116,50 @@ def edgeDetection(tri, points, dotPair, area, area_diff, frm, method=1, deg=1, s
     if len(triEdge) < deg + 2:
         return None, frm_result
 
-    match method:
-        case 1:
-            # Method 1: Linear Fit
-            result, result_cov = np.polyfit(
-                triCenter[:, 0], triCenter[:, 1], 1, full=False, cov=True
-            )  #    np.polynomial.polynomial.Polynomial.fit()
+    if method == 1:
+        # Method 1: Linear Fit
+        result, result_cov = np.polyfit(
+            triCenter[:, 0], triCenter[:, 1], 1, full=False, cov=True
+        )  #    np.polynomial.polynomial.Polynomial.fit()
 
-            return result, frm_result
-            # End Method 1
-        case 2:
-            # Method 2: Line Clustering
-            model = DBSCAN(eps=100, min_samples=4)
-            yhat = model.fit_predict(triCenter)
-            clusters = np.unique(yhat)
-            lines = []
+        return result, frm_result
+        # End Method 1
+    elif method == 2:
+        # Method 2: Line Clustering
+        model = DBSCAN(eps=100, min_samples=4)
+        yhat = model.fit_predict(triCenter)
+        clusters = np.unique(yhat)
+        lines = []
 
-            for cluster in clusters:
-                row = np.transpose(np.where(yhat == cluster))
-                centers = triCenter[row, :]
-                centers = np.reshape(centers, (np.shape(row)[0], 2))
+        for cluster in clusters:
+            row = np.transpose(np.where(yhat == cluster))
+            centers = triCenter[row, :]
+            centers = np.reshape(centers, (np.shape(row)[0], 2))
 
-                colors = (
-                    np.random.randint(100, 255),
-                    np.random.randint(100, 255),
-                    np.random.randint(100, 255),
+            colors = (
+                np.random.randint(100, 255),
+                np.random.randint(100, 255),
+                np.random.randint(100, 255),
+            )
+            for center in centers:
+                cv2.circle(
+                    frm_result,
+                    (center[0].astype(int), center[1].astype(int)),
+                    3,
+                    colors,
+                    -1,
+                    cv2.LINE_AA,
                 )
-                for center in centers:
-                    cv2.circle(
-                        frm_result,
-                        (center[0].astype(int), center[1].astype(int)),
-                        3,
-                        colors,
-                        -1,
-                        cv2.LINE_AA,
-                    )
 
-                if np.shape(row)[0] < deg + 2:
-                    continue
-                lines.append(np.polyfit(centers[:, 0], centers[:, 1], 1))
-            # Line Combining
+            if np.shape(row)[0] < deg + 2:
+                continue
+            lines.append(np.polyfit(centers[:, 0], centers[:, 1], 1))
+        # Line Combining
 
-            lines = np.array(lines)
+        lines = np.array(lines)
 
-            return lines, frm_result
-            # End Method 2
+        return lines, frm_result
+        # End Method 2
 
 
 def main():
