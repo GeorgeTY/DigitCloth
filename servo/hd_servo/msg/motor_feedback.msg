@@ -1,0 +1,4 @@
+float64 cmd_Speed_
+float64 real_Speed_
+float64 cmd_position
+float64 real_position

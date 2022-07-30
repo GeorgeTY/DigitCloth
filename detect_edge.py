@@ -3,8 +3,10 @@ import numpy as np
 from global_params import *
 from sklearn.cluster import DBSCAN
 from matplotlib import pyplot as plt
-from numpy.random import default_rng as rng
+from numpy.random import default_rng
 from copy import copy
+
+rng = default_rng()
 
 
 class RANSAC:
@@ -239,10 +241,30 @@ def edgeDetection(tri, points, dotPair, area, area_diff, frm, method=1, deg=1, s
         # End Method 2
     elif method == 3:
         # Method 3: RANSAC
-        result, result_cov = np.polyfit(
-            triCenter[:, 0], triCenter[:, 1], 1, full=False, cov=True
-        )  #    np.polynomial.polynomial.Polynomial.fit()
-
+        regressor = RANSAC(
+            model=LinearRegressor(),
+            loss=square_error_loss,
+            metric=mean_square_error,
+            n=ransac_minInliers,
+            k=ransac_iterations,
+            t=ransac_threshold,
+        )
+        X = np.reshape(triCenter[:, 0], (np.shape(triCenter)[0], 1))
+        Y = np.reshape(triCenter[:, 1], (np.shape(triCenter)[0], 1))
+        regressor.fit(X, Y)
+        line = np.linspace(0, frm.shape[0], frm.shape[0])
+        Y = regressor.best_fit.predict(line)
+        frm_result = cv2.line(
+            frm_result,
+            (0, Y[0].astype(int)),
+            (frm.shape[1], Y[-1].astype(int)),
+            (0, 255, 255),
+            1,
+            cv2.LINE_AA,
+        )
+        result = np.polyfit(line, Y, 1)
+        return result, frm_result
+        # End Method 3
         return result, frm_result
         # End Method 3
 

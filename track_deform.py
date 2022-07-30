@@ -86,6 +86,7 @@ def drawArea(points, tri, dotPair, area_diff, frm, scale=2):
 def pltDeform(points, tri, area, area_diff=None):
     plt.cla()
 
+    plt.style.use("seaborn-darkgrid")
     plt.triplot(points[:, 0], points[:, 1], tri.simplices)
     plt.plot(points[:, 0], points[:, 1], "o")
     for i in range(len(points)):

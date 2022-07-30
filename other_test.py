@@ -244,5 +244,6 @@ if __name__ == "__main__":
     plt.scatter(X, y)
 
     line = np.linspace(-1, 1, num=100).reshape(-1, 1)
+    X = regressor.predict(line)
     plt.plot(line, regressor.predict(line), c="peru")
     plt.show()

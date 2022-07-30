@@ -23,7 +23,7 @@ cpd_alpha = 0.002  ## 2
 cpd_beta = 800  ## 2
 
 # for edgeDetection
-ed_method = 2
+ed_method = 2  # 1:Linear Fit, 2:Line Clustering, 3:RANSAC
 area_threshold = 40
 ad_upper = 1.3
 ad_lower = 0.7
@@ -32,3 +32,8 @@ ad_ratio = 1.1
 # for linearRegression
 lr_inputSize = 1
 lr_outputSize = 1
+
+# for RANSAC
+ransac_iterations = 100
+ransac_minInliers = 10
+ransac_threshold = 0.05
