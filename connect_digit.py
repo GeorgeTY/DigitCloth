@@ -15,9 +15,9 @@ def connectDigit(intensity=8):
         sys.exit("No Digit Found uwu")
 
     digit = Digit.Digit(digits[0]["serial"])
+    digit.connect()
     digit.set_fps(30)
     digit.set_intensity(intensity)
-    digit.connect()
     if ifVGA:
         digit.set_resolution(digit.STREAMS["VGA"])
     return digit

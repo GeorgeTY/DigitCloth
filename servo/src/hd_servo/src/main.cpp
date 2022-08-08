@@ -55,6 +55,7 @@ int main(int argc,char **argv)
     ros::NodeHandle n;
 
 
+
     #ifdef Enable_Finger_L
         hd_drive finger_L_(Finger_L);
         finger_L_.Finger_init();//舵机中位校准及使能扭矩
@@ -71,12 +72,12 @@ int main(int argc,char **argv)
     // ros::Publisher Real_EndPos_pub = n.advertise<hd_servo::EndPos>("EndPos_real", 10);//反馈末端实际位置
     ros::Publisher MotorsR_Speed_pub=n.advertise<hd_servo::JointSpeed>("JointR_speed_feedback",10);//反馈舵机速度
     ros::Publisher MotorsL_Speed_pub=n.advertise<hd_servo::JointSpeed>("JointL_speed_feedback",10);//反馈舵机速度
-    FILE *InfoL_EndPos_Joint;//保存末端姿态以及关节指令角
-    InfoL_EndPos_Joint=fopen("/home/jhz/catkin_ws/src/hd_servo/src/test_output/TEST_L.txt","w+");
-    fprintf(InfoL_EndPos_Joint,"EndPos_X_Axis\tEndPos_Y_Axis\tEndPos_Angle\tJoint1_Cmd\tJoint2_Cmdt\tJoint3_Cmd\tTime\n");
-    FILE *InfoR_EndPos_Joint;
-    InfoR_EndPos_Joint=fopen("/home/jhz/catkin_ws/src/hd_servo/src/test_output/TEST_R.txt","w+");
-    fprintf(InfoR_EndPos_Joint,"EndPos_X_Axis\tEndPos_Y_Axis\tEndPos_Angle\tJoint1_Cmd\tJoint2_Cmdt\tJoint3_Cmd\tTime\n");
+    // FILE *InfoL_EndPos_Joint;//保存末端姿态以及关节指令角
+    // InfoL_EndPos_Joint=fopen("/home/jhz/catkin_ws/src/hd_servo/src/test_output/TEST_L.txt","w+");
+    // fprintf(InfoL_EndPos_Joint,"EndPos_X_Axis\tEndPos_Y_Axis\tEndPos_Angle\tJoint1_Cmd\tJoint2_Cmdt\tJoint3_Cmd\tTime\n");
+    // FILE *InfoR_EndPos_Joint;
+    // InfoR_EndPos_Joint=fopen("/home/jhz/catkin_ws/src/hd_servo/src/test_output/TEST_R.txt","w+");
+    // fprintf(InfoR_EndPos_Joint,"EndPos_X_Axis\tEndPos_Y_Axis\tEndPos_Angle\tJoint1_Cmd\tJoint2_Cmdt\tJoint3_Cmd\tTime\n");
     /*for test*/
     int count=0;//验证ros的指令发布频率
 
@@ -109,8 +110,8 @@ int main(int argc,char **argv)
             // msg_L.Motor3_Speed=finger_L_.Motor_Speed[2];
             // MotorsL_Speed_pub.publish(msg_L); 
 
-            fprintf(InfoL_EndPos_Joint,"X:%lf\tY:%lf\tA:%lf\tJ1:%lf\tJ2:%lf\tJ3:%lf\tT:%lf\n",endPosL_temp[0],endPosL_temp[1],
-                    endPosL_temp[2],JointThetaL_temp(1,1),JointThetaL_temp(2,1),JointThetaL_temp(3,1),Time_FingerL_temp);
+            // fprintf(InfoL_EndPos_Joint,"X:%lf\tY:%lf\tA:%lf\tJ1:%lf\tJ2:%lf\tJ3:%lf\tT:%lf\n",endPosL_temp[0],endPosL_temp[1],
+                    // endPosL_temp[2],JointThetaL_temp(1,1),JointThetaL_temp(2,1),JointThetaL_temp(3,1),Time_FingerL_temp);
 
 
 
@@ -143,8 +144,8 @@ int main(int argc,char **argv)
             // MotorsR_Speed_pub.publish(msg_R); 
             ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-            fprintf(InfoR_EndPos_Joint,"X:%lf\tY:%lf\tA:%lf\tJ1:%lf\tJ2:%lf\tJ3:%lf\tT:%lf\n",endPosR_temp[0],endPosR_temp[1],
-                    endPosR_temp[2],JointThetaR_temp(1,1),JointThetaR_temp(2,1),JointThetaR_temp(3,1),Time_FingerR_temp);          
+            // fprintf(InfoR_EndPos_Joint,"X:%lf\tY:%lf\tA:%lf\tJ1:%lf\tJ2:%lf\tJ3:%lf\tT:%lf\n",endPosR_temp[0],endPosR_temp[1],
+                    // endPosR_temp[2],JointThetaR_temp(1,1),JointThetaR_temp(2,1),JointThetaR_temp(3,1),Time_FingerR_temp);          
             // if(Time_FingerR_temp<Duration_){/*测试指令发送频率*/
             //     ++count; 
             //     printf("Count：%d\n",count);
@@ -176,8 +177,8 @@ int main(int argc,char **argv)
     #endif
 
     /*for test*/
-    fclose(InfoL_EndPos_Joint);
-    fclose(InfoR_EndPos_Joint);
+    // fclose(InfoL_EndPos_Joint);
+    // fclose(InfoR_EndPos_Joint);
     
     return 0;
 
