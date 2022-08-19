@@ -42,6 +42,7 @@ def main():
 
     blobDetector = cv2.SimpleBlobDetector_create(setDetectionParams())
 
+    ifWindowsMoved = False
     while True:
         if ifRec:
             frm = cap.read()
@@ -51,11 +52,11 @@ def main():
         else:
             frm = digit.get_frame().copy()
 
-        ## Dot detection
+        # Dot detection
         keypoints, frm_with_keypoints = dotDetection(blobDetector, frm)
 
         cv2.imshow("Preview", frm_with_keypoints)
-        cv2.moveWindow("Preview", 2020, 100)
+        cv2.moveWindow("Preview", 100, 100)
 
         if ifRec:
             getKey = cv2.waitKey(0)
@@ -80,7 +81,7 @@ def main():
             )
 
             cv2.imshow("Original", frm_a_dot_segment)
-            cv2.moveWindow("Original", 2020, 480)
+            cv2.moveWindow("Original", 100, 480)
         elif getKey == ord("c"):  # Capture difference
             if ifRec:
                 continue
@@ -102,17 +103,18 @@ def main():
                     frm = digit.get_frame().copy()
 
                 frm_b = frm
-                keypoints_b, frm_b_with_keypoints = dotDetection(blobDetector, frm)
+                keypoints_b, frm_b_with_keypoints = dotDetection(
+                    blobDetector, frm)
                 if len(keypoints_b) == 0:  # No dot detected cause error
                     cv2.imshow("Current", frm_b_with_keypoints)
-                    cv2.moveWindow("Current", 2020, 480)
+                    cv2.moveWindow("Current", 100, 480)
                     cv2.waitKey(1)
                     continue
 
                 ##### Temporary implementation #####
                 if len(keypoints_a) != len(keypoints_b):
                     cv2.imshow("Current", frm_b_with_keypoints)
-                    cv2.moveWindow("Current", 2020, 480)
+                    cv2.moveWindow("Current", 100, 480)
                     getKet = cv2.waitKey(1)
                     if getKey == 27 or getKey == ord("q"):
                         break
@@ -122,7 +124,8 @@ def main():
                 ####################################
 
                 X, Y, TY, G, W, P = dotRegistration(keypoints_a, keypoints_b)
-                frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, frm_a, frm_b)
+                frm_dot_movement, dotPair = dotMatching(
+                    X, Y, TY, P, frm_a, frm_b)
 
                 tri_b, area_b, frm_b_dot_segment = drawSegment(
                     Y,
@@ -133,7 +136,8 @@ def main():
                 print("avg area:", np.average(area_b))
                 area_diff = getAreaDiff(area_a, area_b)
                 frm_b_dot_segment = drawArea(
-                    Y, tri_a, np.transpose(dotPair), area_diff, frm_b_dot_segment
+                    Y, tri_a, np.transpose(
+                        dotPair), area_diff, frm_b_dot_segment
                 )
 
                 result, frm_b_edge_detected = edgeDetection(
@@ -157,22 +161,26 @@ def main():
                 if frm_b_edge_detected is not None:
                     videoOut.write(frm_b_edge_detected)
                     cv2.imshow("Edge Detection", frm_b_edge_detected)
-                    cv2.moveWindow("Edge Detection", 3280, 100)
+                    cv2.moveWindow("Edge Detection", 1360, 100)
                 else:
                     videoOut.write(frm_b_dot_segment)
 
-                pltDeform(np.matmul(np.transpose(dotPair), Y), tri_a, area_b, area_diff)
+                pltDeform(np.matmul(np.transpose(dotPair), Y),
+                          tri_a, area_b, area_diff)
                 # plt.get_current_fig_manager().window.setGeometry = (200, 550, 480, 640)
                 plt.ion()
                 plt.pause(1e-12)
 
-                cv2.moveWindow("Original", 2020, 100)
                 cv2.imshow("Dot Movement", frm_dot_movement)
-                cv2.moveWindow("Dot Movement", 2280, 100)
                 cv2.imshow("Dot Segment", frm_b_dot_segment)
-                cv2.moveWindow("Dot Segment", 2780, 100)
                 cv2.imshow("Current", frm_b_with_keypoints)
-                cv2.moveWindow("Current", 2020, 480)
+                if not ifWindowsMoved:
+                    cv2.moveWindow("Original", 100, 100)
+                    cv2.moveWindow("Dot Movement", 360, 100)
+                    cv2.moveWindow("Dot Segment", 860, 100)
+                    cv2.moveWindow("Current", 100, 480)
+                    ifWindowsMoved = True
+
                 getKey = cv2.waitKey(1)
                 if getKey == ord("s"):
                     cv2.imwrite("output/saved_frm.png", frm_b_dot_segment)
@@ -181,7 +189,8 @@ def main():
                     np.savetxt("output/saved_Y.out", Y, delimiter=" ")
                     # np.savetxt("output/saved_tri.out", tri_a, delimiter=" ")
                     np.savetxt("output/saved_area.out", area_b, delimiter=" ")
-                    np.savetxt("output/saved_area_diff.out", area_diff, delimiter=" ")
+                    np.savetxt("output/saved_area_diff.out",
+                               area_diff, delimiter=" ")
                     print("Data saved to file.")
                     videoSave = True
                     print("Video saved to output/")
@@ -192,7 +201,7 @@ def main():
                 print("FPS: %.2f" % (1 / (toc - tic)))
             break
 
-    ## Turn off the digit
+    # Turn off the digit
     videoOut.release()
     if videoSave:
         os.rename(videotempName, videofileName)
