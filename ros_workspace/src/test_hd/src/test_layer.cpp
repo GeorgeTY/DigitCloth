@@ -6,9 +6,9 @@
 #include <string>
 #include "hd_servo/EndPos.h"
 #include "get_height/Height.h"
-#include "cloth_manipulate.h"
+#include "test_hd/cloth_manipulate.h"
 #include "fingerTip_image/clothEdge.h"
-#include "kukaservo_lib.h"
+#include "test_hd/kukaservo_lib.h"
 
 #define L_Start_X_Axis 0
 #define L_Start_Y_Axis 0
@@ -135,7 +135,7 @@ int main(int argc,char **argv){
                         Eflag_=InsertHd_ClothBottom;
                         ROS_INFO("Start insert hand bottom of cloth");
                         start_time=ros::Time::now();
-                    }           
+                    }
                 }
                 break;
             case InsertHd_ClothBottom:
