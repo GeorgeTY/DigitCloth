@@ -8,9 +8,9 @@ void Move_cloth::Init(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
     init_begin = ros::Time::now();
     init_duration = ros::Duration(6);
 
-    deta_theta = w * (1 / ((float)frequency));
-    deta_ythreshold = ((theta_threshold / 2) * deg2rad * Radius) + (theta_threshold / 2 / deta_theta) * Modify; //默认是对中位置开始
-    start_angle = 0;
+    delta_theta = w * (1 / ((float)frequency));
+    delta_ythreshold = ((theta_threshold / 2) * deg2rad * Radius) + (theta_threshold / 2 / delta_theta) * Modify; //默认是对中位置开始
+    start_angle = InitL_PosAngle;
 
     E1 = 0;
     E2 = 0;
@@ -20,10 +20,10 @@ void Move_cloth::Init(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
     count = 0;
 
     msg_L.X_Axis = InitL_PosX;
-    msg_L.Y_Axis = 135.0 /*132.0*/;
+    msg_L.Y_Axis = InitL_PosY;
     msg_L.Z_Angle = InitL_PosAngle;
-    msg_R.X_Axis = 0;
-    msg_R.Y_Axis = 135.0;
+    msg_R.X_Axis = InitR_PosX;
+    msg_R.Y_Axis = InitR_PosY;
     msg_R.Z_Angle = InitR_PosAngle;
 
     return;
@@ -46,8 +46,8 @@ void Move_cloth::Set_MoveDistance_in(float distance, hd_servo::EndPos &msg_L)
     {
         ROS_INFO("Error");
     }
-    float deta = (theta_threshold / 2 - start_angle);
-    deta_ythreshold = (deta * deg2rad * Radius) + (deta / deta_theta) * Modify;
+    float delta = (theta_threshold / 2 - start_angle);
+    delta_ythreshold = (delta * deg2rad * Radius) + (delta / delta_theta) * Modify;
 
     return;
 }
@@ -67,8 +67,8 @@ void Move_cloth::Set_MoveDistance_out(float distance, hd_servo::EndPos &msg_L)
     {
         ROS_INFO("Error");
     }
-    float deta = (theta_threshold / 2 + start_angle);
-    deta_ythreshold = (deta * deg2rad * Radius) + (deta / deta_theta) * Modify;
+    float delta = (theta_threshold / 2 + start_angle);
+    delta_ythreshold = (delta * deg2rad * Radius) + (delta / delta_theta) * Modify;
 
     init_begin = ros::Time::now();
 
@@ -81,8 +81,8 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
     E1 = E2;
     E2 = E3;
     E3 = target_height - (sum_height - init_sum_height);
-    float deta_height = KP * E3 + KI * (E1 + E2 + E3) + KD * ((E3 - E2) - (E2 - E1));
-    deta_height = abs(deta_height) > 1.0 ? (deta_height / abs(deta_height) * 1.0) : deta_height;
+    float delta_height = KP * E3 + KI * (E1 + E2 + E3) + KD * ((E3 - E2) - (E2 - E1));
+    delta_height = abs(delta_height) > 1.0 ? (delta_height / abs(delta_height) * 1.0) : delta_height;
 
     switch (flag_)
     {
@@ -93,20 +93,25 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
         ROS_INFO("init_position");
         break;
     case force_control:
+
+#ifdef DISABLE_FORCE_CONTROL
+        flag_ = turnL_clock;
+        msg_R.X_Axis = msg_R.X_Axis - deltaXGrip;
+        ROS_INFO("deltaXGrip activated");
+        ros::Duration(0.5).sleep();
+#else
         ROS_INFO("force_control");
         /*在力控时很容易出现对不准失控的情况，所以力控过程要将手指对正，然后校正x*/
         if ((sum_height - init_sum_height) < target_height)
         {
             /*力控*/
-            msg_R.X_Axis = msg_R.X_Axis - deta_height;
+            msg_R.X_Axis = msg_R.X_Axis - delta_height;
         }
         else
         {
             flag_ = init_Pos_after_force;
             init_begin = ros::Time::now();
         }
-#ifdef no_force_control
-        flag_ = turnL_clock;
 #endif
         break;
 
@@ -119,40 +124,48 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
             flag_ = turnL_clock;
         break;
     case turnL_clock:
-        ROS_INFO("turnL_clock");
-        action1(msg_L, msg_R, deta_theta);
+        ROS_INFO("turnL_clock, start_angle = %f", start_angle);
+        ROS_INFO("Z_Angle = %f", msg_L.Z_Angle);
+        action1(msg_L, msg_R, delta_theta);
 
         if (msg_L.Z_Angle > (theta_threshold / 2))
             flag_ = moveL_up;
 
         break;
+    // case moveR_up: //Moving Digit
+
+    //     break;
+
+    // case moveR_down:
+
+    //     break;
     case moveL_up:
 
-        action4(msg_L, msg_R, deta_theta);
+        action4(msg_L, msg_R, delta_theta);
         // if((msg_L.Y_Axis-InitL_PosY)>((theta_threshold/2)*deg2rad*Radius))
         //     flag_=turnL_anticlock;
-        if ((msg_L.Y_Axis - InitL_PosY) > deta_ythreshold)
+        if ((msg_L.Y_Axis - InitL_PosY) > delta_ythreshold)
             flag_ = turnL_anticlock;
         ROS_INFO("moveL_up");
         break;
 
     case turnL_anticlock:
-        action2(msg_L, msg_R, -deta_theta);
+        ROS_INFO("turnL_anticlock");
+        action2(msg_L, msg_R, -delta_theta);
         if (msg_L.Z_Angle < start_angle)
         {
             flag_ = turnL_clock;
             count++;
-            // ROS_INFO("The %d Move",count);
+            ROS_INFO("The %d Move", count);
         }
 #ifdef COUNT_MODE
-        if (count == COUNT_MODE)
+        if (count >= COUNT_MODE)
         {
             flag_ = stop;
-            ROS_INFO("Move times : 10");
+            ROS_INFO("Move times : %d", count);
         }
 #endif
 
-        ROS_INFO("turnL_anticlock");
         break;
     case stop:
         break;
@@ -170,8 +183,8 @@ void Move_cloth::Move_Cloth_out(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R
     E1 = E2;
     E2 = E3;
     E3 = target_height - (sum_height - init_sum_height);
-    float deta_height = KP * E3 + KI * (E1 + E2 + E3) + KD * ((E3 - E2) - (E2 - E1));
-    deta_height = abs(deta_height) > 1.0 ? (deta_height / abs(deta_height) * 1.0) : deta_height;
+    float delta_height = KP * E3 + KI * (E1 + E2 + E3) + KD * ((E3 - E2) - (E2 - E1));
+    delta_height = abs(delta_height) > 1.0 ? (delta_height / abs(delta_height) * 1.0) : delta_height;
 
     switch (flag_)
     {
@@ -187,7 +200,7 @@ void Move_cloth::Move_Cloth_out(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R
         if ((sum_height - init_sum_height) < target_height)
         {
             /*力控*/
-            msg_R.X_Axis = msg_R.X_Axis - deta_height;
+            msg_R.X_Axis = msg_R.X_Axis - delta_height;
         }
         else
         {
@@ -198,7 +211,7 @@ void Move_cloth::Move_Cloth_out(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R
         if (sum_height < target_height)
         {
             /*力控*/
-            msg_R.X_Axis = msg_R.X_Axis - deta_height;
+            msg_R.X_Axis = msg_R.X_Axis - delta_height;
         }
         else
         {
@@ -221,21 +234,21 @@ void Move_cloth::Move_Cloth_out(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R
         break;
 
     case turnL_anticlock:
-        action1(msg_L, msg_R, -deta_theta);
+        action1(msg_L, msg_R, -delta_theta);
         if (msg_L.Z_Angle < (-theta_threshold / 2))
             flag_ = moveL_down;
         ROS_INFO("turnL_anticlock");
         break;
 
     case moveL_down:
-        action4(msg_L, msg_R, -deta_theta);
-        if ((InitL_PosY - msg_L.Y_Axis) > deta_ythreshold)
+        action4(msg_L, msg_R, -delta_theta);
+        if ((InitL_PosY - msg_L.Y_Axis) > delta_ythreshold)
             flag_ = turnL_clock;
         ROS_INFO("moveL_down");
         break;
 
     case turnL_clock:
-        action2(msg_L, msg_R, deta_theta);
+        action2(msg_L, msg_R, delta_theta);
 
         if (msg_L.Z_Angle > (start_angle))
         {
@@ -264,44 +277,44 @@ void Move_cloth::Move_Cloth_out(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R
     return;
 }
 
-void Move_cloth::action1(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float deta_theta)
+void Move_cloth::action1(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta)
 {
     /*两种情况
     1：V0_L=0,wR!=0,V0_R=0 接触点相对digit位置不变，接触点处两表面相对滑动；
     2：V0=wR=V0_R!=0 接触点相对digit位置不变，接触点处两表面相对滑动；
     以下采用情况1。
     */
-    float deta_y = deta_theta * deg2rad * Radius;
-    msg_L.Z_Angle = msg_L.Z_Angle + deta_theta;
+    float delta_y = delta_theta * deg2rad * Radius;
+    msg_L.Z_Angle = msg_L.Z_Angle + delta_theta;
     return;
 }
-void Move_cloth::action2(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float deta_theta)
+void Move_cloth::action2(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta)
 {
     /*V0_L=wR!=0,V_R=0;接触点相对Digit上移，接触点处两表面相对静止*/
-    float modify_deta_y = deta_theta > 0 ? Modify : -Modify;
-    float deta_y = deta_theta * deg2rad * Radius + modify_deta_y; //可能因为位置精度的问题，需要增加一个修正量，来保证速度的一致
-    msg_L.Z_Angle = msg_L.Z_Angle + deta_theta;
-    msg_L.Y_Axis = msg_L.Y_Axis + deta_y;
+    float modify_delta_y = delta_theta > 0 ? Modify : -Modify;
+    float delta_y = delta_theta * deg2rad * Radius + modify_delta_y; //可能因为位置精度的问题，需要增加一个修正量，来保证速度的一致
+    msg_L.Z_Angle = msg_L.Z_Angle + delta_theta;
+    msg_L.Y_Axis = msg_L.Y_Axis + delta_y;
     return;
 }
-void Move_cloth::action3(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float deta_theta)
+void Move_cloth::action3(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta)
 {
     /*两种情况
     1：V0_L=0,wR!=0,V0_R=0 接触点相对digit位置不变，接触点处两表面相对滑动；
     2：V0=wR=V0_R!=0 接触点相对digit位置不变，接触点处两表面相对滑动；
     以下采用情况2。
     */
-    float deta_y = deta_theta * deg2rad * Radius;
-    msg_L.Z_Angle = msg_L.Z_Angle + deta_theta;
-    msg_L.Y_Axis = msg_L.Y_Axis + deta_y;
-    msg_R.Y_Axis = msg_R.Y_Axis + deta_y;
+    float delta_y = delta_theta * deg2rad * Radius;
+    msg_L.Z_Angle = msg_L.Z_Angle + delta_theta;
+    msg_L.Y_Axis = msg_L.Y_Axis + delta_y;
+    msg_R.Y_Axis = msg_R.Y_Axis + delta_y;
     return;
 }
-void Move_cloth::action4(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float deta_theta)
+void Move_cloth::action4(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta)
 {
     /*wR=0,V0_L!=0,V0_R=0;接触点相对于digit上移*/
-    float deta_y = deta_theta * deg2rad * Radius;
-    msg_L.Y_Axis = msg_L.Y_Axis + deta_y;
+    float delta_y = delta_theta * deg2rad * Radius;
+    msg_L.Y_Axis = msg_L.Y_Axis + delta_y;
     return;
 }
 

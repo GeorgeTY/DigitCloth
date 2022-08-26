@@ -10,8 +10,8 @@
 #include <string>
 #include "hd_servo/EndPos.h"
 
-// #define COUNT_MODE 10//总计运动十次，用于测量移动距离
-// #define no_force_control
+#define COUNT_MODE 10 //总计运动十次，用于测量移动距离
+#define DISABLE_FORCE_CONTROL
 #define Modify_digit_sensor
 #define PI 3.14159265
 #define Radius 35.0
@@ -19,15 +19,16 @@
 #define rad2deg (360.0 / PI)
 #define InitL_PosX -32.0 //-28.0
 #define InitR_PosX -8.0  // 2.0
-#define InitL_PosY 135.0
-#define InitR_PosY 135.0
+#define InitL_PosY 120.0
+#define InitR_PosY 120.0
 #define InitL_PosAngle 0.0
 #define InitR_PosAngle 0.0
 #define Modify 0.065
 #define frequency 15
 #define Target_height 0.5 // 0.5
-#define Theta_threshold 50.0
+#define Theta_threshold 70.0
 #define w_deg 5.0
+#define deltaXGrip 2 //夹紧时的X方向偏移量
 
 using namespace std;
 
@@ -47,7 +48,7 @@ private:
     };
     flag flag_;
 
-    float deta_theta;
+    float delta_theta;
     const float w = w_deg;
     ros::Duration init_duration;
     ros::Time init_begin;
@@ -56,7 +57,7 @@ private:
     const float theta_len = 10.0;
     const float theta_miu = (theta_len / Radius) * rad2deg;
     const float theta_threshold = Theta_threshold; //接触面为高摩擦区对应的弧度角
-    float deta_ythreshold;
+    float delta_ythreshold;
     float start_angle;
 
     /*力相关*/
@@ -75,10 +76,10 @@ public:
     int count; //统计操作次数
 
 private:
-    void action1(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float deta_theta);
-    void action2(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float deta_theta);
-    void action3(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float deta_theta);
-    void action4(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float deta_theta);
+    void action1(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta);
+    void action2(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta);
+    void action3(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta);
+    void action4(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta);
 
 public:
     Move_cloth(){};
