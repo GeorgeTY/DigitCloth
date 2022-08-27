@@ -95,7 +95,7 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
 
     case force_control:
 #ifdef DISABLE_FORCE_CONTROL
-        flag_ = turnL_clock;
+        flag_ = moveR_up;
         msg_R.X_Axis = msg_R.X_Axis - deltaXGrip;
         ROS_INFO("deltaXGrip activated");
         ros::Duration(0.5).sleep();
@@ -121,15 +121,6 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
         msg_R.Y_Axis = InitR_PosY;
         msg_L.Z_Angle = start_angle;
         if ((ros::Time::now() - init_begin) > ros::Duration(3))
-            flag_ = turnL_clock;
-        break;
-
-    case turnL_clock:
-        ROS_INFO("turnL_clock, start_angle = %f", start_angle);
-        ROS_INFO("Z_Angle = %f", msg_L.Z_Angle);
-        action1(msg_L, msg_R, delta_theta);
-
-        if (msg_L.Z_Angle > (theta_threshold / 2))
             flag_ = moveR_up;
         break;
 
@@ -145,14 +136,33 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
         ROS_INFO("moveR_down");
         action6(msg_L, msg_R, deltaYDigit);
         if (msg_R.Y_Axis < YDigitLowerLim)
+        {
             flag_ = moveR_reset;
+            ros::Duration(1).sleep();
+        }
         break;
 
     case moveR_reset:
         ROS_INFO("moveR_reset"); // Reset Digit Position
         action5(msg_L, msg_R, deltaYDigit);
         if (msg_R.Y_Axis > InitR_PosY)
+        {
+            flag_ = turnL_clock;
+            ros::Duration(1).sleep();
+        }
+        break;
+
+    case turnL_clock:
+        ROS_INFO("turnL_clock, start_angle = %f", start_angle);
+        ROS_INFO("Z_Angle = %f", msg_L.Z_Angle);
+        action1(msg_L, msg_R, delta_theta);
+
+        if (msg_L.Z_Angle > (theta_threshold / 2))
+        {
             flag_ = moveL_up;
+            ros::Duration(1).sleep();
+        }
+        break;
 
     case moveL_up:
         action4(msg_L, msg_R, delta_theta);
@@ -168,7 +178,7 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
         action2(msg_L, msg_R, -delta_theta);
         if (msg_L.Z_Angle < start_angle)
         {
-            flag_ = turnL_clock;
+            flag_ = init_Pos_after_force;
             count++;
             ROS_INFO("The %d Move", count);
         }

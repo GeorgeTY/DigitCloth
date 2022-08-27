@@ -28,10 +28,10 @@
 #define Target_height 0.5 // 0.5
 #define Theta_threshold 70.0
 #define w_deg 5.0
-#define deltaXGrip 2  //夹紧时的X方向偏移量
-#define deltaYDigit 2 // Digit传感器的偏移量
-#define YDigitUpperLim 130.0
-#define YDigitLowerLim 110.0
+#define deltaXGrip 2    //夹紧时的X方向偏移量
+#define deltaYDigit 0.2 // Digit传感器的偏移量
+#define YDigitUpperLim InitR_PosY + 15.0
+#define YDigitLowerLim InitR_PosY - 15.0
 
 using namespace std;
 
