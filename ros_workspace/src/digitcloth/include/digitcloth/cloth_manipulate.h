@@ -28,7 +28,10 @@
 #define Target_height 0.5 // 0.5
 #define Theta_threshold 70.0
 #define w_deg 5.0
-#define deltaXGrip 2 //夹紧时的X方向偏移量
+#define deltaXGrip 2  //夹紧时的X方向偏移量
+#define deltaYDigit 2 // Digit传感器的偏移量
+#define YDigitUpperLim 130.0
+#define YDigitLowerLim 110.0
 
 using namespace std;
 
@@ -44,6 +47,9 @@ private:
         moveL_up, /*moveL_up与turnL_anticlock配合，完成接触区域的转换*/
         moveL_down,
         turnL_anticlock, /**/
+        moveR_up,        /*Digit上下移动*/
+        moveR_down,
+        moveR_reset,
         stop
     };
     flag flag_;
@@ -80,6 +86,8 @@ private:
     void action2(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta);
     void action3(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta);
     void action4(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_theta);
+    void action5(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_digit);
+    void action6(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_digit);
 
 public:
     Move_cloth(){};

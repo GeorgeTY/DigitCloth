@@ -92,8 +92,8 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
         init_sum_height = (init_sum_height + sum_height) / 2;
         ROS_INFO("init_position");
         break;
-    case force_control:
 
+    case force_control:
 #ifdef DISABLE_FORCE_CONTROL
         flag_ = turnL_clock;
         msg_R.X_Axis = msg_R.X_Axis - deltaXGrip;
@@ -123,24 +123,38 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
         if ((ros::Time::now() - init_begin) > ros::Duration(3))
             flag_ = turnL_clock;
         break;
+
     case turnL_clock:
         ROS_INFO("turnL_clock, start_angle = %f", start_angle);
         ROS_INFO("Z_Angle = %f", msg_L.Z_Angle);
         action1(msg_L, msg_R, delta_theta);
 
         if (msg_L.Z_Angle > (theta_threshold / 2))
+            flag_ = moveR_up;
+        break;
+
+    case moveR_up:
+        ROS_INFO("moveR_up");
+        action5(msg_L, msg_R, deltaYDigit);
+        /*Get Digit Data Here*/
+        if (msg_R.Y_Axis > YDigitUpperLim)
+            flag_ = moveR_down;
+        break;
+
+    case moveR_down:
+        ROS_INFO("moveR_down");
+        action6(msg_L, msg_R, deltaYDigit);
+        if (msg_R.Y_Axis < YDigitLowerLim)
+            flag_ = moveR_reset;
+        break;
+
+    case moveR_reset:
+        ROS_INFO("moveR_reset"); // Reset Digit Position
+        action5(msg_L, msg_R, deltaYDigit);
+        if (msg_R.Y_Axis > InitR_PosY)
             flag_ = moveL_up;
 
-        break;
-    // case moveR_up: //Moving Digit
-
-    //     break;
-
-    // case moveR_down:
-
-    //     break;
     case moveL_up:
-
         action4(msg_L, msg_R, delta_theta);
         // if((msg_L.Y_Axis-InitL_PosY)>((theta_threshold/2)*deg2rad*Radius))
         //     flag_=turnL_anticlock;
@@ -165,8 +179,8 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
             ROS_INFO("Move times : %d", count);
         }
 #endif
-
         break;
+
     case stop:
         break;
 
@@ -317,6 +331,18 @@ void Move_cloth::action4(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float
     msg_L.Y_Axis = msg_L.Y_Axis + delta_y;
     return;
 }
+void Move_cloth::action5(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_digit)
+{
+    /*digit上移*/
+    msg_R.Y_Axis = msg_R.Y_Axis + delta_digit;
+    return;
+}
+void Move_cloth::action6(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float delta_digit)
+{
+    /*digit下移*/
+    msg_R.Y_Axis = msg_R.Y_Axis - delta_digit;
+    return;
+}
 
 string Move_cloth::get_HdControl_state()
 {
@@ -354,6 +380,15 @@ string Move_cloth::get_HdControl_state()
         break;
     case turnL_anticlock:
         result = "turnL_anticlock";
+        break;
+    case moveR_up:
+        result = "moveR_up";
+        break;
+    case moveR_down:
+        result = "moveR_down";
+        break;
+    case moveR_reset:
+        result = "moveR_reset";
         break;
     case stop:
         result = "stop";
