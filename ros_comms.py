@@ -1,5 +1,5 @@
 import rospy
-from digitcloth.msg import Edge_msg
+from edge_msg import Edge_msg
 
 
 def ros_talker(isEdge, result):
@@ -19,6 +19,6 @@ def ros_talker(isEdge, result):
 
 if __name__ == "__main__":
     try:
-        ros_talker()
+        ros_talker(True, [11, 45, 14])
     except rospy.ROSInterruptException:
         pass
