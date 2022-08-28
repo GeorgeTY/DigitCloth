@@ -1,6 +1,7 @@
 import os
 import cv2
 import time
+import rospy
 import platform
 import numpy as np
 from global_params import *
@@ -9,6 +10,7 @@ import matplotlib.pyplot as plt
 if not (platform.system() == "Windows" or platform.system() == "Darwin"):
     from connect_digit import connectDigit
 
+from ros_comms import ros_talker
 from fix_blob import fixMissingBlob
 from genetic_calc import calcMatrixM
 from record_digit import setVideoEncoder
@@ -103,8 +105,7 @@ def main():
                     frm = digit.get_frame().copy()
 
                 frm_b = frm
-                keypoints_b, frm_b_with_keypoints = dotDetection(
-                    blobDetector, frm)
+                keypoints_b, frm_b_with_keypoints = dotDetection(blobDetector, frm)
                 if len(keypoints_b) == 0:  # No dot detected cause error
                     cv2.imshow("Current", frm_b_with_keypoints)
                     cv2.moveWindow("Current", 100, 480)
@@ -124,8 +125,7 @@ def main():
                 ####################################
 
                 X, Y, TY, G, W, P = dotRegistration(keypoints_a, keypoints_b)
-                frm_dot_movement, dotPair = dotMatching(
-                    X, Y, TY, P, frm_a, frm_b)
+                frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, frm_a, frm_b)
 
                 tri_b, area_b, frm_b_dot_segment = drawSegment(
                     Y,
@@ -136,8 +136,7 @@ def main():
                 print("avg area:", np.average(area_b))
                 area_diff = getAreaDiff(area_a, area_b)
                 frm_b_dot_segment = drawArea(
-                    Y, tri_a, np.transpose(
-                        dotPair), area_diff, frm_b_dot_segment
+                    Y, tri_a, np.transpose(dotPair), area_diff, frm_b_dot_segment
                 )
 
                 result, frm_b_edge_detected = edgeDetection(
@@ -155,6 +154,15 @@ def main():
                     frm_b_edge_detected = edgeVisualize(
                         frm_b_edge_detected, result, method=ed_method
                     )
+                    try:
+                        ros_talker(True, result[0])  # Publish to ROS (The first edge)
+                    except rospy.ROSInterruptException:
+                        print("ROS Interrupted")
+                else:
+                    try:
+                        ros_talker(False, [0, 0, 0, 0])
+                    except rospy.ROSInterruptException:
+                        print("ROS Interrupted")
 
                 # videoOut.write(frm_b_dot_segment)
 
@@ -165,8 +173,7 @@ def main():
                 else:
                     videoOut.write(frm_b_dot_segment)
 
-                pltDeform(np.matmul(np.transpose(dotPair), Y),
-                          tri_a, area_b, area_diff)
+                pltDeform(np.matmul(np.transpose(dotPair), Y), tri_a, area_b, area_diff)
                 # plt.get_current_fig_manager().window.setGeometry = (200, 550, 480, 640)
                 plt.ion()
                 plt.pause(1e-12)
@@ -189,8 +196,7 @@ def main():
                     np.savetxt("output/saved_Y.out", Y, delimiter=" ")
                     # np.savetxt("output/saved_tri.out", tri_a, delimiter=" ")
                     np.savetxt("output/saved_area.out", area_b, delimiter=" ")
-                    np.savetxt("output/saved_area_diff.out",
-                               area_diff, delimiter=" ")
+                    np.savetxt("output/saved_area_diff.out", area_diff, delimiter=" ")
                     print("Data saved to file.")
                     videoSave = True
                     print("Video saved to output/")
