@@ -2,15 +2,19 @@ import rospy
 from digitcloth.msg import Edge_msg
 
 
-def ros_talker():
+def ros_talker(isEdge, result):
     pub = rospy.Publisher("digitcloth_edge", Edge_msg)
-    rospy.init_node("digitcloth_node", anonymous=True)
+    rospy.init_node("digitcloth_edge_node", anonymous=True)
     rate = rospy.Rate(10)
 
     msg = Edge_msg()
 
-    msg.isEdge = True
-    msg.P0 = 0
+    msg.isEdge = isEdge
+    msg.P0 = result[0]
+    msg.P1 = result[1]
+    msg.P2 = result[2]
+
+    pub.publish(msg)
 
 
 if __name__ == "__main__":

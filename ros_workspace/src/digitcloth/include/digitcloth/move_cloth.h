@@ -20,6 +20,8 @@ private:
     const float kInitPos_R_X = -12.0;
     const float kInitPos_R_Y = 120.0;
     const float kInitPos_R_Z = 0.0;
+    const float Radius = 35.0;
+    const float Deg2Rad = M_PI / 180.0;
 
     const float kGrabDeltaX = 4.0; // Control the Gripping Force
     enum stateFlags
@@ -27,6 +29,8 @@ private:
         kInit = 0,
         kGrab,
         kRelease,
+        kInwards,
+        kDetectEdge,
         kStop
     };
     stateFlags state_flag_;
@@ -44,13 +48,18 @@ private:
     void rotateL_NoMove(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step);
     void rotateR_NoMove(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step);
 
+    void actionRotational(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step);
+    void actionSliding(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step);
+    void actionRolling(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step);
+
 public:
-    int move_count = 0;
     void moveInit(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R);
     void moveGrab(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R);
     void moveDetectEdge(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step);
+    void moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step);
     void setState(int state);
 
+    int move_count = 0;
     bool isEdgeDetected;
     ClothEdge edge_detected;
 };

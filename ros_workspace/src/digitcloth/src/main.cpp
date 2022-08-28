@@ -6,7 +6,7 @@
 #include <string>
 
 #include "hd_servo/EndPos.h"
-#include "digitcloth/cloth_manipulate.h"
+// #include "digitcloth/cloth_manipulate.h"
 #include "digitcloth/move_cloth.h"
 
 int main(int argc, char **argv)

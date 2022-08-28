@@ -23,4 +23,68 @@ void moveCloth::moveGrab(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
     return;
 }
 
-void moveCloth::moveDetectEdge(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step) {}
+void moveCloth::moveDetectEdge(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step) { return; }
+
+void moveCloth::moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
+{
+    switch (state_flag_)
+    {
+    case kInit:
+        moveInit(msg_L, msg_R);
+        state_flag_ = kGrab;
+        break;
+    case kGrab:
+        moveGrab(msg_L, msg_R);
+        state_flag_ = kRelease;
+        break;
+    case kRelease:
+        moveInit(msg_L, msg_R);
+        state_flag_ = kStop;
+        break;
+    case kStop:
+        break;
+    }
+
+    return;
+}
+
+void moveCloth::actionRotational(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
+{
+    msg_L.Z_Angle = msg_L.Z_Angle + step;
+
+    return;
+}
+
+void moveCloth::actionSliding(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
+{
+    msg_L.Y_Axis = msg_L.Y_Axis + step;
+}
+
+void moveCloth::actionRolling(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
+{
+    float step_y = step * Deg2Rad * Radius;
+    msg_L.Z_Angle = msg_L.Z_Angle + step;
+    msg_L.Y_Axis = msg_L.Y_Axis + step_y;
+
+    return;
+}
+
+void moveCloth::moveL_up(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
+{
+    msg_L.Y_Axis = msg_L.Y_Axis + step;
+}
+
+void moveCloth::moveR_up(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
+{
+    msg_R.Y_Axis = msg_R.Y_Axis + step;
+}
+
+void moveCloth::moveL_down(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
+{
+    msg_L.Y_Axis = msg_L.Y_Axis - step;
+}
+
+void moveCloth::moveR_down(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
+{
+    msg_R.Y_Axis = msg_R.Y_Axis - step;
+}
