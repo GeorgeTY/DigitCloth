@@ -10,16 +10,22 @@
 #include "digitcloth/Edge_msg.h"
 #include "digitcloth/move_cloth.h"
 
-void edgeCallback(const digitcloth::Edge_msg::ConstPtr &msg)
+digitcloth::Edge_msg edgeCallback(const digitcloth::Edge_msg::ConstPtr &msg, moveCloth &myCloth)
 {
     if (msg->isEdge == true)
     {
         ROS_INFO("Edge detected!");
+        myCloth.edge_detected.isEdgeDetected = true;
+        myCloth.edge_detected.P0 = msg->p0;
+        myCloth.edge_detected.P1 = msg->p1;
+        myCloth.edge_detected.P2 = msg->p2;
     }
     else
     {
         ROS_INFO("No edge detected!");
     }
+
+    return *msg;
 }
 
 int main(int argc, char **argv)

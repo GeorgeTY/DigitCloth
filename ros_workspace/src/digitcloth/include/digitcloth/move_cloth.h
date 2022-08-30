@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include "hd_servo/EndPos.h"
+#include "digitcloth/Edge_msg.h"
 
 using namespace std;
 
@@ -76,6 +77,7 @@ public:
     int move_count, rub_count;
     class ClothEdge
     {
+        bool isEdgeDetected;
         float P0;
         float P1;
         float P2;
