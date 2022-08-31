@@ -19,7 +19,7 @@ private:
     const float kRad2Deg = 180.0 / M_PI;
     const float kInitPos_L_X = -34.0;
     const float kInitPos_L_Y = 120.0;
-    const float kInitPos_L_Z = 0.0;
+    const float kInitPos_L_Z = 3.0;
     const float kInitPos_R_X = 2.0;
     const float kInitPos_R_Y = 120.0;
     const float kInitPos_R_Z = 0.0;
@@ -27,11 +27,11 @@ private:
     const float kFrictionAreaArc = 18.0;
     const float kFrictionAreaAngle = kFrictionAreaArc / kRadius; // in radians
 
-    const float kGrabDeltaX = 2;     // Control the Gripping Force
+    const float kGrabDeltaX = 3;     // Control the Gripping Force, bigger value means stronger gripping force
     const float kRubUpperAmount = 5; // Control the Rubbing Amount
     const float kRubLowerAmount = 5;
     const float kRubDelta = 0.5;              // Control the Rubbing Speed
-    const float kMoveDelta = 0.1;             // Control the Moving Speed
+    const float kMoveDelta = 0.3;             // Control the Moving Speed
     const float kRotateDelta = 5 / float(15); // Control the Rotating Speed
     enum stateFlags
     {

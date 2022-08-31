@@ -15,6 +15,7 @@ void edgeCallback(const digitcloth::Edge_msg::ConstPtr &msg, moveCloth &myCloth)
     if (msg->isEdge == true)
     {
         ROS_INFO("Edge detected!");
+        // ros::Duration(3).sleep();
         myCloth.edge_detected.isEdgeDetected = true;
         myCloth.edge_detected.P0 = msg->p0;
         myCloth.edge_detected.P1 = msg->p1;

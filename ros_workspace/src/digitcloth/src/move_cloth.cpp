@@ -147,11 +147,11 @@ void moveCloth::moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_
             isInfoPrinted = true;
         }
 
-        rotateL_Move(msg_L, msg_R, kRotateDelta);
+        rotateL_NoMove(msg_L, msg_R, kRotateDelta);
         ROS_INFO("Rotate Left No Move Clockwise: %f, %f", msg_L.Z_Angle, kRotateDelta);
         ros::Duration(0.2).sleep();
 
-        if (msg_L.Z_Angle >= kInitPos_L_Z + kRotateAngleLimit / 2)
+        if (msg_L.Z_Angle >= kInitPos_L_Z + kFrictionAreaAngle * kRad2Deg / 2)
         {
             state_flag_ = kMoveL_UP;
             isInfoPrinted = false;
@@ -167,7 +167,7 @@ void moveCloth::moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_
 
         moveL_up(msg_L, msg_R, kMoveDelta);
 
-        if (msg_L.Y_Axis >= kInitPos_L_Y + kMoveDistanceLimit)
+        if (msg_L.Y_Axis >= kInitPos_L_Y)
         {
             state_flag_ = kRotateL_NoMove_CounterClockwise;
             isInfoPrinted = false;
@@ -245,6 +245,6 @@ void moveCloth::rotateL_Move(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, f
 void moveCloth::rotateL_NoMove(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
 {
     msg_L.Z_Angle = msg_L.Z_Angle + step;
-    msg_L.Y_Axis = msg_L.Y_Axis + step * kDeg2Rad * kRadius;
+    msg_L.Y_Axis = msg_L.Y_Axis - step * kDeg2Rad * kRadius;
     return;
 }
