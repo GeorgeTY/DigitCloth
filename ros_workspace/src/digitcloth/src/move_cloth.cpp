@@ -18,9 +18,9 @@ void moveCloth::moveInit(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
 void moveCloth::calcDistance(float distance)
 {
     if (distance > kFrictionAreaArc)
-        kRotateAngleLimit = kFrictionAreaAngle;
+        kRotateAngleLimit = kFrictionAreaAngle * kRad2Deg;
     else if (0 < distance < kFrictionAreaArc)
-        kRotateAngleLimit = distance / kRadius; // Return the angle in radians
+        kRotateAngleLimit = distance / kRadius * kRad2Deg; // Return the angle in degrees
     else
         ROS_INFO("Distance Error");
 
@@ -30,8 +30,8 @@ void moveCloth::calcDistance(float distance)
 
 void moveCloth::moveGrab(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
 {
-    msg_L.X_Axis = msg_L.X_Axis - kGrabDeltaX;
-    msg_R.X_Axis = msg_R.X_Axis + kGrabDeltaX;
+    msg_L.X_Axis = kInitPos_L_X + kGrabDeltaX;
+    msg_R.X_Axis = kInitPos_R_X - kGrabDeltaX;
 
     return;
 }
@@ -75,23 +75,6 @@ void moveCloth::moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_
 
         if (ros::Time::now() - tic > ros::Duration(0.5)) // Grab Duration
         {
-            state_flag_ = kRubRightUp;
-            isInfoPrinted = false;
-        }
-        break;
-    // Digit向上搓
-    case kRubRightUp:
-        if (!isInfoPrinted)
-        {
-            ROS_INFO("Rub Right UP: %d", rub_count);
-            isInfoPrinted = true;
-        }
-        moveR_up(msg_L, msg_R, kRubDelta);
-        ros::Duration(0.2).sleep();
-        /* Digit Callback */
-
-        if (msg_R.Y_Axis > kInitPos_R_Y + kRubUpperAmount)
-        {
             state_flag_ = kRubRightDown;
             isInfoPrinted = false;
         }
@@ -103,7 +86,31 @@ void moveCloth::moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_
             ROS_INFO("Rub Right DOWN: %d", rub_count);
             isInfoPrinted = true;
         }
+
         moveR_down(msg_L, msg_R, kRubDelta);
+        ros::Duration(0.2).sleep();
+        /* Digit Callback */
+
+        if (msg_R.Y_Axis < kInitPos_R_Y - kRubLowerAmount)
+        {
+            state_flag_ = kRubRightUp;
+            isInfoPrinted = false;
+        }
+        break;
+    // Digit向上搓
+    case kRubRightUp:
+        if (!isInfoPrinted)
+        {
+            ROS_INFO("Rub Right UP: %d", rub_count);
+            isInfoPrinted = true;
+        }
+
+        moveR_up(msg_L, msg_R, kRubDelta);
+        if (isEdgeDetected)
+        {
+            ROS_INFO("in Func Edge Detected, Y: %.2f, EdgePos: %.2f %.2f %.2f", msg_R.Y_Axis, edge_detected.P0, edge_detected.P1, edge_detected.P2);
+            ros::Duration(10).sleep();
+        }
         ros::Duration(0.2).sleep();
         /* Digit Callback */
 
@@ -120,14 +127,16 @@ void moveCloth::moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_
             ROS_INFO("Rub Right RESET: %d", rub_count);
             isInfoPrinted = true;
         }
-        moveR_up(msg_L, msg_R, kRubDelta);
+
+        moveR_up(msg_L, msg_R, -kRubDelta);
         ros::Duration(0.2).sleep();
         /* Digit Callback */
 
-        if (msg_R.Y_Axis >= kInitPos_R_Y)
+        if (msg_R.Y_Axis <= kInitPos_R_Y)
         {
             state_flag_ = kRotateL_NoMove_Clockwise;
             isInfoPrinted = false;
+            ros::Duration(5).sleep();
         }
         break;
     // L指顺时针旋转，接触位置不变
@@ -137,7 +146,10 @@ void moveCloth::moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_
             ROS_INFO("Rotate Left No Move Clockwise: %f", msg_L.Z_Angle);
             isInfoPrinted = true;
         }
-        rotateL_NoMove(msg_L, msg_R, kRotateDelta);
+
+        rotateL_Move(msg_L, msg_R, kRotateDelta);
+        ROS_INFO("Rotate Left No Move Clockwise: %f, %f", msg_L.Z_Angle, kRotateDelta);
+        ros::Duration(0.2).sleep();
 
         if (msg_L.Z_Angle >= kInitPos_L_Z + kRotateAngleLimit / 2)
         {
@@ -152,6 +164,7 @@ void moveCloth::moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_
             ROS_INFO("Move Left UP: %f", msg_L.Y_Axis);
             isInfoPrinted = true;
         }
+
         moveL_up(msg_L, msg_R, kMoveDelta);
 
         if (msg_L.Y_Axis >= kInitPos_L_Y + kMoveDistanceLimit)
@@ -166,9 +179,10 @@ void moveCloth::moveClothInwards(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_
             ROS_INFO("Rotate Left No Move CounterClockwise: %f", msg_L.Z_Angle);
             isInfoPrinted = true;
         }
+
         rotateL_NoMove(msg_L, msg_R, -kRotateDelta);
 
-        if (msg_L.Z_Angle >= kInitPos_L_Z)
+        if (msg_L.Z_Angle <= kInitPos_L_Z)
         {
             state_flag_ = kGrab;
             isInfoPrinted = false;
@@ -220,6 +234,12 @@ void moveCloth::moveL_down(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, flo
 void moveCloth::moveR_down(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
 {
     msg_R.Y_Axis = msg_R.Y_Axis - step;
+}
+
+void moveCloth::rotateL_Move(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)
+{
+    msg_L.Z_Angle = msg_L.Z_Angle + step;
+    return;
 }
 
 void moveCloth::rotateL_NoMove(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, float step)

@@ -10,7 +10,7 @@
 #include "digitcloth/Edge_msg.h"
 #include "digitcloth/move_cloth.h"
 
-digitcloth::Edge_msg edgeCallback(const digitcloth::Edge_msg::ConstPtr &msg, moveCloth &myCloth)
+void edgeCallback(const digitcloth::Edge_msg::ConstPtr &msg, moveCloth &myCloth)
 {
     if (msg->isEdge == true)
     {
@@ -22,26 +22,30 @@ digitcloth::Edge_msg edgeCallback(const digitcloth::Edge_msg::ConstPtr &msg, mov
     }
     else
     {
-        ROS_INFO("No edge detected!");
+        // ROS_INFO("No edge detected!");
+        myCloth.edge_detected.isEdgeDetected = false;
+        myCloth.edge_detected.P0 = 0;
+        myCloth.edge_detected.P1 = 0;
+        myCloth.edge_detected.P2 = 0;
     }
 
-    return *msg;
+    return;
 }
 
 int main(int argc, char **argv)
 {
     ros::init(argc, argv, "digitcloth");
     ros::NodeHandle nh;
-    ros::Rate rosRate(10);
+    ros::Rate rosRate(15);
 
     ros::Publisher CmdL_pub = nh.advertise<hd_servo::EndPos>("Goal_EndPos_L", 1);
     ros::Publisher CmdR_pub = nh.advertise<hd_servo::EndPos>("Goal_EndPos_R", 1);
     hd_servo::EndPos msg_L;
     hd_servo::EndPos msg_R;
 
-    ros::Subscriber Edge_sub = nh.subscribe<digitcloth::Edge_msg>("digitcloth_edge", 1000, edgeCallback);
-
     moveCloth myCloth;
+
+    ros::Subscriber Edge_sub = nh.subscribe<digitcloth::Edge_msg>("digitcloth_edge", 1000, boost::bind(&edgeCallback, _1, ref(myCloth)));
 
     ros::Time tic = ros::Time::now();
     ros::Time toc = ros::Time::now();
@@ -55,11 +59,8 @@ int main(int argc, char **argv)
         if (!isInit)
         {
             isInit = true;
-            myCloth.moveInit(msg_L, msg_R);
-            myCloth.calcDistance(3);
-            ROS_INFO("Ready.");
-            ros::Duration(3).sleep(); // Wait for Preparation
-            myCloth.moveGrab(msg_L, msg_R);
+            myCloth.calcDistance(10);
+            ros::Duration(1).sleep(); // Wait for Preparation
         }
 
         myCloth.moveClothInwards(msg_L, msg_R, 0.2);
