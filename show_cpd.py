@@ -34,18 +34,19 @@ DeformableRegistration.get_registration_parameters = getRegParam
 
 
 def main():
-    tic = time.time()
-    X = np.loadtxt("output/saved_X.out")
-    Y = np.loadtxt("output/saved_Y.out")
+    X = np.loadtxt("output/saved_X.out")  # Source
+    Y = np.loadtxt("output/saved_Y.out")  # Destination
 
     fig = plt.figure()
     fig.add_axes([0, 0, 1, 1])
     callback = partial(visualize, ax=fig.axes[0])
 
+    tic = time.time()
     reg = DeformableRegistration(
         **{"X": X, "Y": Y, "tolerance": cpd_tolerance}, alpha=cpd_alpha, beta=cpd_beta
     )
     TY, (G, W, P) = reg.register(callback)
+    toc = time.time()
     # np.savetxt("./output/saved_P.out", P * 100, delimiter=",", fmt="%d")
     # print(TY)
 
@@ -56,7 +57,6 @@ def main():
     #     **{"X": X, "Y": Y}, alpha=cpd_alpha, beta=cpd_beta
     # ).register()
 
-    toc = time.time()
     print("Time: {:.2f}".format(toc - tic))
 
 
