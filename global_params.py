@@ -27,7 +27,7 @@ ed_method = 2  # 1:Linear Fit, 2:Line Clustering, 3:RANSAC
 area_threshold = 40
 ad_upper = 1.3
 ad_lower = 0.7
-ad_ratio = 1.15
+ad_ratio = 1.09
 
 # for linearRegression
 lr_inputSize = 1

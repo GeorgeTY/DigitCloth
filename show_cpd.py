@@ -1,6 +1,9 @@
 from functools import partial
 import matplotlib.pyplot as plt
-from pycpd import DeformableRegistration
+
+# from pycpd import DeformableRegistration
+
+from cycpd import deformable_registration as DeformableRegistration
 import numpy as np
 import time
 from global_params import *
@@ -29,7 +32,7 @@ def getRegParam(self):
     return self.G, self.W, self.P
 
 
-## Add P output to existing function
+# Add P output to existing function
 DeformableRegistration.get_registration_parameters = getRegParam
 
 
@@ -45,13 +48,13 @@ def main():
     reg = DeformableRegistration(
         **{"X": X, "Y": Y, "tolerance": cpd_tolerance}, alpha=cpd_alpha, beta=cpd_beta
     )
-    TY, (G, W, P) = reg.register(callback)
+    TY, (G, W, P) = reg.register()
     toc = time.time()
     # np.savetxt("./output/saved_P.out", P * 100, delimiter=",", fmt="%d")
     # print(TY)
 
-    fig.axes[0].scatter(TY[:, 0], TY[:, 1], color="green", label="Target")
-    plt.show()
+    # fig.axes[0].scatter(TY[:, 0], TY[:, 1], color="green", label="Target")
+    # plt.show()
 
     # TY, (G, W, P) = DeformableRegistration(
     #     **{"X": X, "Y": Y}, alpha=cpd_alpha, beta=cpd_beta

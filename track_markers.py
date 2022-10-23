@@ -3,7 +3,11 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay
+
 from pycpd import DeformableRegistration
+
+# from cycpd import deformable_registration as DeformableRegistration
+
 from detect_blob import dotDetection
 from global_params import *
 from track_deform import dotSegment, drawSegment, pltDeform, getAreaDiff, drawArea
@@ -13,9 +17,12 @@ def dotRegistration(keypoints_a, keypoints_b):
     X = np.array([keypoint.pt for keypoint in keypoints_a])
     Y = np.array([keypoint.pt for keypoint in keypoints_b])
 
+    tic = time.time()
     TY, (G, W, P) = DeformableRegistration(
         **{"X": X, "Y": Y, "tolerance": cpd_tolerance}, alpha=cpd_alpha, beta=cpd_beta
-    ).register()  ## CPD registration
+    ).register()  # CPD registration
+    toc = time.time()
+    print("CPD Registration Time: {:.3f} ms".format((toc - tic) * 1000))
 
     return X, Y, TY, G, W, P
 
@@ -113,7 +120,7 @@ def dotMatchingKNN():
     return
 
 
-## Add P output to existing function
+# Add P output to existing function
 DeformableRegistration.get_registration_parameters = getRegParam
 
 
@@ -163,8 +170,8 @@ def main():
     # np.savetxt("./output/saved_TY.out", TY, delimiter=",")
     # np.savetxt("./output/saved_G.out", G, delimiter=",")
     # np.savetxt("./output/saved_W.out", W, delimiter=",")
-    np.savetxt("./output/saved_X.out", X, delimiter=" ")
-    np.savetxt("./output/saved_Y.out", Y, delimiter=" ")
+    # np.savetxt("./output/saved_X.out", X, delimiter=" ")
+    # np.savetxt("./output/saved_Y.out", Y, delimiter=" ")
     # np.savetxt("./output/saved_P.out", P * 100, delimiter=",", fmt="%d")
 
     # tri = Delaunay(X)

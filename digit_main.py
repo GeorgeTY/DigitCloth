@@ -125,7 +125,13 @@ def main():
                 ####################################
 
                 X, Y, TY, G, W, P = dotRegistration(keypoints_a, keypoints_b)
+                tic_temp = time.time()
                 frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, frm_a, frm_b)
+                print(
+                    "Dot Matching Time: {:.3f} ms".format(
+                        (time.time() - tic_temp) * 1000
+                    )
+                )
 
                 tri_b, area_b, frm_b_dot_segment = drawSegment(
                     Y,
@@ -139,6 +145,7 @@ def main():
                     Y, tri_a, np.transpose(dotPair), area_diff, frm_b_dot_segment
                 )
 
+                tic_temp = time.time()
                 result, frm_b_edge_detected = edgeDetection(
                     tri_a,
                     Y,
@@ -163,6 +170,11 @@ def main():
                         ros_talker(False, [0, 0, 0, 0])
                     except rospy.ROSInterruptException:
                         print("ROS Interrupted")
+                print(
+                    "Edge Detection Time: {:.3f} ms".format(
+                        (time.time() - tic_temp) * 1000
+                    )
+                )
 
                 # videoOut.write(frm_b_dot_segment)
 
@@ -173,10 +185,10 @@ def main():
                 else:
                     videoOut.write(frm_b_dot_segment)
 
-                pltDeform(np.matmul(np.transpose(dotPair), Y), tri_a, area_b, area_diff)
-                # plt.get_current_fig_manager().window.setGeometry = (200, 550, 480, 640)
-                plt.ion()
-                plt.pause(1e-12)
+                # pltDeform(np.matmul(np.transpose(dotPair), Y), tri_a, area_b, area_diff)
+                # # plt.get_current_fig_manager().window.setGeometry = (200, 550, 480, 640)
+                # plt.ion()
+                # plt.pause(1e-12)
 
                 cv2.imshow("Dot Movement", frm_dot_movement)
                 cv2.imshow("Dot Segment", frm_b_dot_segment)
