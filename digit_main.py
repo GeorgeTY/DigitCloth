@@ -7,8 +7,13 @@ import numpy as np
 from global_params import *
 import matplotlib.pyplot as plt
 
-if not (platform.system() == "Windows" or platform.system() == "Darwin"):
+if (
+    not (platform.system() == "Windows" or platform.system() == "Darwin")
+    and not ifGSmini
+):
     from connect_digit import connectDigit
+else:
+    from connect_gsmini import connectGSmini
 
 from ros_comms import ros_talker
 from fix_blob import fixMissingBlob
@@ -30,9 +35,12 @@ def main():
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)
         print("Reading camera...")
     else:
-        digit = connectDigit(intensity)
-        for _ in range(15):  # Preheat the digit
-            frm0 = digit.get_frame()
+        if ifGSmini:
+            gsmini = connectGSmini()
+        else:
+            digit = connectDigit(intensity)
+            for _ in range(15):  # Preheat the digit
+                frm0 = digit.get_frame()
 
     timestr = time.strftime("%Y%m%d-%H%M%S")
     fileName = "output/markerDetect-{}.mp4".format(timestr)
@@ -51,6 +59,8 @@ def main():
         if platform.system() == "Windows" or platform.system() == "Darwin":
             ret, frm = cap.read()
             frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
+        elif ifGSmini:
+            frm = gsmini.get_image((320, 240))
         else:
             frm = digit.get_frame().copy()
 
@@ -101,6 +111,8 @@ def main():
                 if platform.system() == "Windows" or platform.system() == "Darwin":
                     ret, frm = cap.read()
                     frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
+                elif ifGSmini:
+                    frm = gsmini.get_image((320, 240))
                 else:
                     frm = digit.get_frame().copy()
 
@@ -162,7 +174,8 @@ def main():
                         frm_b_edge_detected, result, method=ed_method
                     )
                     try:
-                        ros_talker(True, result[0])  # Publish to ROS (The first edge)
+                        # Publish to ROS (The first edge)
+                        ros_talker(True, result[0])
                     except rospy.ROSInterruptException:
                         print("ROS Interrupted")
                 else:
@@ -228,6 +241,8 @@ def main():
     plt.ioff()
     if ifRec or platform.system() == "Windows" or platform.system() == "Darwin":
         cap.release()
+    elif ifGSmini:
+        gsmini.stop_video()
     else:
         digit.disconnect()
 

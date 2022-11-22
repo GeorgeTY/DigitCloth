@@ -13,6 +13,10 @@ def setDetectionParams():
         blobParams.filterByArea = True
         blobParams.minArea = minArea_VGA
         blobParams.maxArea = maxArea_VGA
+    elif ifGSmini:
+        blobParams.filterByArea = True
+        blobParams.minArea = minArea_GSmini_Stock
+        blobParams.maxArea = maxArea_GSmini_Stock
     else:
         blobParams.filterByArea = True
         blobParams.minArea = minArea
