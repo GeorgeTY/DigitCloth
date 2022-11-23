@@ -46,6 +46,7 @@ def main():
     fileName = "output/markerDetect-{}.mp4".format(timestr)
     videoOut, videotempName, videofileName = setVideoEncoder(fileName)
     videoSave = False
+    timestampFrm = time.time()
     print(
         "Press ESC to quit, O to capture Original, C to capture Difference, D to show Difference."
     )
@@ -192,11 +193,17 @@ def main():
                 # videoOut.write(frm_b_dot_segment)
 
                 if frm_b_edge_detected is not None:
-                    videoOut.write(frm_b_edge_detected)
+                    if time.time() - timestampFrm > timeoutFPS:  # Framrate fix
+                        for _ in range(int((time.time() - timestampFrm) / timeoutFPS)):
+                            videoOut.write(frm_b_edge_detected)
+                        timestampFrm = time.time()
                     cv2.imshow("Edge Detection", frm_b_edge_detected)
                     cv2.moveWindow("Edge Detection", 1360, 100)
                 else:
-                    videoOut.write(frm_b_dot_segment)
+                    if time.time() - timestampFrm > timeoutFPS:
+                        for _ in range(int((time.time() - timestampFrm) / timeoutFPS)):
+                            videoOut.write(frm_b_dot_segment)
+                        timestampFrm = time.time()
 
                 # pltDeform(np.matmul(np.transpose(dotPair), Y), tri_a, area_b, area_diff)
                 # # plt.get_current_fig_manager().window.setGeometry = (200, 550, 480, 640)

@@ -6,6 +6,7 @@ import cv2
 
 
 def setVideoEncoder(fileName, ifVGA=False, scale=2):
+    fps = videoFPS
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     videoOut = cv2.VideoWriter()
     tempName = "output/tmp.mp4"
@@ -13,14 +14,14 @@ def setVideoEncoder(fileName, ifVGA=False, scale=2):
         videoOut.open(
             tempName,
             fourcc,
-            30,
+            fps,
             (480 * scale, 640 * scale),
         )
     else:
         videoOut.open(
             tempName,
             fourcc,
-            30,
+            fps,
             (240 * scale, 320 * scale),
         )
     return videoOut, tempName, fileName

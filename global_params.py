@@ -3,9 +3,11 @@ ifRec = False
 intensity = 10
 # ifVGA = True
 ifVGA = False
+videoFPS = 30
+timeoutFPS = 1 / videoFPS
 
 # for GSmini
-ifGSmini = True
+ifGSmini = False
 
 scale = 2
 
@@ -31,7 +33,7 @@ cpd_beta = 800  # 2
 ed_method = 2  # 1:Linear Fit, 2:Line Clustering, 3:RANSAC
 area_threshold = 40
 area_threshold_gsmini = 300
-angle_threshold = 5 / 8  # * np.pi
+angle_threshold = 7 / 8  # * np.pi
 ad_upper = 1.3
 ad_lower = 0.7
 ad_ratio = 1.09
