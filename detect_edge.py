@@ -33,18 +33,21 @@ class RANSAC:
             ids = rng.permutation(X.shape[0])
 
             maybe_inliers = ids[: self.n]
-            maybe_model = copy(self.model).fit(X[maybe_inliers], y[maybe_inliers])
+            maybe_model = copy(self.model).fit(
+                X[maybe_inliers], y[maybe_inliers])
 
             thresholded = (
-                self.loss(y[ids][self.n :], maybe_model.predict(X[ids][self.n :]))
+                self.loss(y[ids][self.n:],
+                          maybe_model.predict(X[ids][self.n:]))
                 < self.t
             )
 
-            inlier_ids = ids[self.n :][np.flatnonzero(thresholded).flatten()]
+            inlier_ids = ids[self.n:][np.flatnonzero(thresholded).flatten()]
 
             if inlier_ids.size > self.d:
                 inlier_points = np.hstack([maybe_inliers, inlier_ids])
-                better_model = copy(self.model).fit(X[inlier_points], y[inlier_points])
+                better_model = copy(self.model).fit(
+                    X[inlier_points], y[inlier_points])
 
                 this_error = self.metric(
                     y[inlier_points], better_model.predict(X[inlier_points])
@@ -125,7 +128,32 @@ def edgeVisualize(frm, result, method=1, scale=1):
 
 def edgeDetection(tri, points, dotPair, area, area_diff, frm, method=1, deg=1, scale=2):
     frm_result = frm.copy()
-    triSelect = area > area_threshold
+    if ifGSmini:
+        triSelect = area > area_threshold_gsmini
+    else:
+        triSelect = area > area_threshold
+    # Filter triangles by angle (if the largest angle is too large, it is not a acceptable triangle)
+    for i in range(len(triSelect)):
+        if triSelect[i]:
+            edgeLength = [
+                np.linalg.norm(
+                    points[tri.simplices[i][0]] - points[tri.simplices[i][1]]
+                ),
+                np.linalg.norm(
+                    points[tri.simplices[i][1]] - points[tri.simplices[i][2]]
+                ),
+                np.linalg.norm(
+                    points[tri.simplices[i][2]] - points[tri.simplices[i][0]]
+                ),
+            ]
+            edgeLength.sort()
+            if (edgeLength[0] ** 2 + edgeLength[1] ** 2 - edgeLength[2] ** 2) / (
+                2 * edgeLength[0] * edgeLength[1]
+            ) < np.cos(np.pi * angle_threshold):
+                # print("suteta", edgeLength, (edgeLength[0] ** 2 + edgeLength[1]
+                #   ** 2 - edgeLength[2] ** 2)/(2 * edgeLength[0] * edgeLength[1]))
+                triSelect[i] = False
+
     triCenter = []
     triEdge = []
     # looking for neighbors edges that has descending area difference
@@ -144,7 +172,8 @@ def edgeDetection(tri, points, dotPair, area, area_diff, frm, method=1, deg=1, s
             ):
                 triEdge.append(
                     tuple(
-                        tri.simplices[i][np.array(tuple(x for x in range(3) if x != j))]
+                        tri.simplices[i][np.array(
+                            tuple(x for x in range(3) if x != j))]
                     )
                 )
     triEdge = np.array(triEdge)
@@ -162,8 +191,10 @@ def edgeDetection(tri, points, dotPair, area, area_diff, frm, method=1, deg=1, s
         )
         frm_result = cv2.line(
             frm_result,
-            (pos[edge_temp[0]][0].astype(int), pos[edge_temp[0]][1].astype(int)),
-            (pos[edge_temp[1]][0].astype(int), pos[edge_temp[1]][1].astype(int)),
+            (pos[edge_temp[0]][0].astype(int),
+             pos[edge_temp[0]][1].astype(int)),
+            (pos[edge_temp[1]][0].astype(int),
+             pos[edge_temp[1]][1].astype(int)),
             (0, 255, 255),
             1,
             cv2.LINE_AA,
@@ -171,7 +202,8 @@ def edgeDetection(tri, points, dotPair, area, area_diff, frm, method=1, deg=1, s
         frm_result = cv2.putText(
             frm_result,
             str(edge_temp[0]),
-            (pos[edge_temp[0]][0].astype(int), pos[edge_temp[0]][1].astype(int)),
+            (pos[edge_temp[0]][0].astype(int),
+             pos[edge_temp[0]][1].astype(int)),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
             (0, 255, 255),
@@ -181,7 +213,8 @@ def edgeDetection(tri, points, dotPair, area, area_diff, frm, method=1, deg=1, s
         frm_result = cv2.putText(
             frm_result,
             str(edge_temp[1]),
-            (pos[edge_temp[1]][0].astype(int), pos[edge_temp[1]][1].astype(int)),
+            (pos[edge_temp[1]][0].astype(int),
+             pos[edge_temp[1]][1].astype(int)),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.5,
             (0, 255, 255),
@@ -199,7 +232,7 @@ def edgeDetection(tri, points, dotPair, area, area_diff, frm, method=1, deg=1, s
         # Method 1: Linear Fit
         result, result_cov = np.polyfit(
             triCenter[:, 0], triCenter[:, 1], 1, full=False, cov=True
-        )  #    np.polynomial.polynomial.Polynomial.fit()
+        )  # np.polynomial.polynomial.Polynomial.fit()
 
         return result, frm_result
         # End Method 1
