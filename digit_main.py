@@ -62,6 +62,7 @@ def main():
             frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
         elif ifGSmini:
             frm = gsmini.get_image((320, 240))
+            frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
         else:
             frm = digit.get_frame().copy()
 
@@ -114,6 +115,7 @@ def main():
                     frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 elif ifGSmini:
                     frm = gsmini.get_image((320, 240))
+                    frm = cv2.rotate(frm, cv2.ROTATE_90_COUNTERCLOCKWISE)
                 else:
                     frm = digit.get_frame().copy()
 
@@ -140,11 +142,11 @@ def main():
                 X, Y, TY, G, W, P = dotRegistration(keypoints_a, keypoints_b)
                 tic_temp = time.time()
                 frm_dot_movement, dotPair = dotMatching(X, Y, TY, P, frm_a, frm_b)
-                print(
-                    "Dot Matching Time: {:.3f} ms".format(
-                        (time.time() - tic_temp) * 1000
-                    )
-                )
+                # print(
+                #     "Dot Matching Time: {:.3f} ms".format(
+                #         (time.time() - tic_temp) * 1000
+                #     )
+                # )
 
                 tri_b, area_b, frm_b_dot_segment = drawSegment(
                     Y,
@@ -184,11 +186,11 @@ def main():
                         ros_talker(False, [0, 0, 0, 0])
                     except rospy.ROSInterruptException:
                         print("ROS Interrupted")
-                print(
-                    "Edge Detection Time: {:.3f} ms".format(
-                        (time.time() - tic_temp) * 1000
-                    )
-                )
+                # print(
+                #     "Edge Detection Time: {:.3f} ms".format(
+                #         (time.time() - tic_temp) * 1000
+                #     )
+                # )
 
                 # videoOut.write(frm_b_dot_segment)
 
