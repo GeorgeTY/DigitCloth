@@ -7,7 +7,7 @@ videoFPS = 30
 timeoutFPS = 1 / videoFPS
 
 # for GSmini
-ifGSmini = False
+ifGSmini = True
 
 scale = 2
 
