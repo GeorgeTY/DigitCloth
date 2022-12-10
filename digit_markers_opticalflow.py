@@ -21,6 +21,7 @@ class Markers_OF:
         )
         self.isInitFrame = True
         self.isTiming = False
+        self.isVisualize = True
         return
 
     def __track_fallback(self, frame):
@@ -28,11 +29,8 @@ class Markers_OF:
 
         return
 
-    def __update_motion(self):
-
-        return
-
-    def detect(self, frame):
+    def track(self, frame):
+        """Track the markers in the current frame."""
         if self.isTiming:
             tic = time.time()
 
@@ -59,22 +57,24 @@ class Markers_OF:
             )
         # endregion
 
-        # TODO: Displacement, Speed, Accleration Calculation Here
-
         if self.isTiming:
             print("Markers: Update Time: ", time.time() - tic)
         return
 
-    def track(self):
+    def pairing(self):
         """Update the paring of markers from the init frame through successive frames."""
         if self.isTiming:
             tic = time.time()
 
-        # TODO: Implement Tracking
-        raise NotImplementedError
+        # TODO: Implement Pairing
 
         if self.isTiming:
             print("Markers: Track Time: ", time.time() - tic)
+        return
+
+    def calc(self):
+        """Calculate the displacement, speed, and acceleration of the markers."""
+
         return
 
     def visualize(self):
@@ -84,6 +84,9 @@ class Markers_OF:
 
         # region Visualize: Keypoints Movement
         if not self.isInitFrame:
+            self.frame_curr_with_flow_vectors = cv2.addWeighted(
+                self.frame_prev, 0.5, self.frame_curr_with_keypoints, 0.5, 0
+            )
             for i, (new, old) in enumerate(zip(self.p1_curr, self.keypoints_prev)):
                 a, b = new.ravel()
                 c, d = old.ravel()
@@ -92,16 +95,16 @@ class Markers_OF:
                 c = int(c)
                 d = int(d)
                 cv2.arrowedLine(
-                    self.frame_curr_with_keypoints,
+                    self.frame_curr_with_flow_vectors,
                     (a - (a - c) * 2, b - (b - d) * 2),
                     (c, d),
                     (124, 67, 237),  # KizunaAI Color
-                    5,
+                    2,
                     cv2.LINE_AA,
                     tipLength=0.2,
                 )
                 # cv2.circle(frm, (a, b), 5, (0, 0, 255), -1)
-            cv2.imshow("Optical Flow", self.frame_curr_with_keypoints)
+            cv2.imshow("Optical Flow", self.frame_curr_with_flow_vectors)
         # endregion
 
         if self.isTiming:
@@ -109,11 +112,11 @@ class Markers_OF:
         return
 
     def update(self):
+        """Update the previous frame and keypoints."""
 
         self.frame_prev = self.frame_curr
         self.keypoints_prev = self.keypoints_curr
 
-        # TODO: Check if this is correct, maybe needs to copy the instance
         if not self.isInitFrame:
             self.p1_prev, self.st_prev, self.err_prev = (
                 self.p1_curr,
@@ -123,6 +126,18 @@ class Markers_OF:
 
         if self.isInitFrame:
             self.isInitFrame = False
+
+    def run(self, frame):
+        """Run marker tracking by calling all the functions."""
+
+        self.track(frame)
+        self.pairing()
+        self.calc()
+        if self.isVisualize:
+            self.visualize()
+        self.update()
+
+        return
 
 
 def main():
@@ -135,14 +150,8 @@ def main():
         while True:
             tic = time.time()
 
-            # region Main Loop
             frame = gsmini.get_image((320, 240))
-
-            markers.detect(frame)
-            # markers.track()
-            markers.visualize()
-            markers.update()
-            # endregion
+            markers.run(frame)
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
@@ -150,6 +159,9 @@ def main():
             print("FPS: ", 1 / (toc - tic))
     except KeyboardInterrupt:
         print("Keyboard Interrupt")
+    finally:
+        cv2.destroyAllWindows()
+        gsmini.stop_video()
     return
 
 
