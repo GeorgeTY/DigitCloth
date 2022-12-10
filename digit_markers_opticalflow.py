@@ -95,8 +95,8 @@ class Markers_OF:
                     self.frame_curr_with_keypoints,
                     (a - (a - c) * 2, b - (b - d) * 2),
                     (c, d),
-                    (0, 255, 0),
-                    2,
+                    (124, 67, 237),  # KizunaAI Color
+                    5,
                     cv2.LINE_AA,
                     tipLength=0.2,
                 )
