@@ -8,6 +8,7 @@ from detect_blob import setDetectionParams, dotDetection
 class Markers_OF:
     frame_init, frame_prev, frame_curr = None, None, None
     keypoints_init, keypoints_prev, keypoints_curr = None, None, None
+    sample_length = 128
 
     def __init__(self):
         self.blobDetector = cv2.SimpleBlobDetector_create(setDetectionParams())
@@ -36,12 +37,16 @@ class Markers_OF:
 
         # region Get Keypoints
         self.frame_curr = frame
-        self.keypoints_curr, self.frame_curr_with_keypoints = dotDetection(
-            self.blobDetector, frame
-        )
-        self.keypoints_curr = np.array(
-            [[[kp.pt[0], kp.pt[1]]] for kp in self.keypoints_curr], dtype=np.float32
-        )
+        # if self.isInitFrame:  # Init Frame: Get Keypoints by blob detection
+        if True:
+            self.keypoints_curr, self.frame_curr_with_keypoints = dotDetection(
+                self.blobDetector, frame
+            )
+            self.keypoints_curr = np.array(
+                [[[kp.pt[0], kp.pt[1]]] for kp in self.keypoints_curr], dtype=np.float32
+            )
+        else:
+            self.keypoints_curr = self.keypoints_prev
         # endregion
 
         # region Optical Flow
@@ -87,6 +92,7 @@ class Markers_OF:
             self.frame_curr_with_flow_vectors = cv2.addWeighted(
                 self.frame_prev, 0.5, self.frame_curr_with_keypoints, 0.5, 0
             )
+
             for i, (new, old) in enumerate(zip(self.p1_curr, self.keypoints_prev)):
                 a, b = new.ravel()
                 c, d = old.ravel()
@@ -101,9 +107,17 @@ class Markers_OF:
                     (124, 67, 237),  # KizunaAI Color
                     2,
                     cv2.LINE_AA,
-                    tipLength=0.2,
+                    tipLength=0.25,
                 )
-                # cv2.circle(frm, (a, b), 5, (0, 0, 255), -1)
+
+            cv2.putText(
+                self.frame_curr_with_flow_vectors,
+                str(len(self.p1_curr)),
+                (0, 15),
+                cv2.FONT_HERSHEY_COMPLEX,
+                0.5,
+                (255, 255, 255),
+            )
             cv2.imshow("Optical Flow", self.frame_curr_with_flow_vectors)
         # endregion
 
@@ -142,15 +156,17 @@ class Markers_OF:
 
 def main():
     gsmini = connectGSmini()
+    gsmini.imgw = 288  # Integer Scaling
+    gsmini.imgh = 384
     blobDetector = cv2.SimpleBlobDetector_create(setDetectionParams())
 
-    frame_init = gsmini.get_image((320, 240))
+    frame_init = gsmini.get_image((384, 288))
     markers = Markers_OF()
     try:
         while True:
             tic = time.time()
 
-            frame = gsmini.get_image((320, 240))
+            frame = gsmini.get_image((384, 288))
             markers.run(frame)
 
             if cv2.waitKey(1) & 0xFF == ord("q"):
