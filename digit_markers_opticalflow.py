@@ -5,10 +5,20 @@ from connect_gsmini import connectGSmini
 from detect_blob import setDetectionParams, dotDetection
 
 
-class Markers_OF:
+class Markers_OF:  # Optical Flow
+    # region Variables
     frame_init, frame_prev, frame_curr = None, None, None
     keypoints_init, keypoints_prev, keypoints_curr = None, None, None
     sample_length = 128
+    pointer_count = 3  # The calculation of Acceleration requires (at least) 3 samples
+
+    dots_count = 284
+    dots_index = 0  # Index of the current sample
+    dots_ptr = np.zeros((pointer_count + 1, dots_count), np.int8)  # Pointer to keypoint
+    dots_pos = np.zeros((sample_length, dots_count, 2), np.int8)  # Position
+    dots_vel = np.zeros((sample_length, dots_count, 2), np.float16)  # Velocity
+    dots_acc = np.zeros((sample_length, dots_count, 2), np.float16)  # Acceleration
+    # endregion
 
     def __init__(self):
         self.blobDetector = cv2.SimpleBlobDetector_create(setDetectionParams())
@@ -27,7 +37,7 @@ class Markers_OF:
 
     def __track_fallback(self, frame):
         # TODO: Track using old method
-
+        raise NotImplementedError
         return
 
     def track(self, frame):
@@ -60,6 +70,11 @@ class Markers_OF:
                 self.keypoints_curr,
                 **self.lk_params
             )
+        self.keypoints_length = (
+            len(self.keypoints_curr)
+            if len(self.keypoints_curr) <= self.sample_length
+            else self.sample_length
+        )  # Limit the number of keypoints to the maximum sample length
         # endregion
 
         if self.isTiming:
@@ -71,7 +86,12 @@ class Markers_OF:
         if self.isTiming:
             tic = time.time()
 
-        # TODO: Implement Pairing
+        if not self.isInitFrame:
+            for i in range(self.keypoints_length):
+                # TODO: Figure out how the ptr works. Passing the index of the current sample to the ptr
+                self.dots_pos[self.dots_index, i, :] = self.keypoints_curr[i, :]
+                if self.st_curr[i] == 1:
+                    self.dots_ptr[i] = self.dots_ptr[i - 1]
 
         if self.isTiming:
             print("Markers: Track Time: ", time.time() - tic)
@@ -130,13 +150,16 @@ class Markers_OF:
 
         self.frame_prev = self.frame_curr
         self.keypoints_prev = self.keypoints_curr
-
         if not self.isInitFrame:
             self.p1_prev, self.st_prev, self.err_prev = (
                 self.p1_curr,
                 self.st_curr,
                 self.err_curr,
             )
+        else:
+            for i in range(self.keypoints_length):  # index 0 for init frame
+                self.dots_pos[0, i, :] = self.keypoints_curr[i, :]
+                self.dots_index += 1
 
         if self.isInitFrame:
             self.isInitFrame = False
@@ -156,12 +179,8 @@ class Markers_OF:
 
 def main():
     gsmini = connectGSmini()
-    gsmini.imgw = 288  # Integer Scaling
-    gsmini.imgh = 384
-    blobDetector = cv2.SimpleBlobDetector_create(setDetectionParams())
-
-    frame_init = gsmini.get_image((384, 288))
     markers = Markers_OF()
+
     try:
         while True:
             tic = time.time()
@@ -178,6 +197,7 @@ def main():
     finally:
         cv2.destroyAllWindows()
         gsmini.stop_video()
+
     return
 
 

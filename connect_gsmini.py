@@ -8,6 +8,8 @@ from detect_blob import setDetectionParams, dotDetection
 def connectGSmini():
     cam_id = 0
     dev = gsdevice.Camera(gsdevice.Finger.MINI, cam_id)
+    dev.imgw = 288  # Integer Scaling
+    dev.imgh = 384
     dev.connect()
 
     return dev
