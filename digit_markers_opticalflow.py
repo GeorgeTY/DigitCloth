@@ -3,6 +3,8 @@ import cv2
 import time
 import numpy as np
 from collections import deque
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN
 from connect_gsmini import connectGSmini
 from detect_blob import setDetectionParams, dotDetection
 
@@ -20,9 +22,9 @@ class Markers_OF:  # Optical Flow
 
     def __init__(self):
         self.blob_detector = cv2.SimpleBlobDetector_create(setDetectionParams())
-        self.feature_params = dict(maxCorners=100, qualityLevel=0.3, minDistance=7, blockSize=7)
+        self.feature_params = dict(maxCorners=100, qualityLevel=0.3, minDistance=7, blockSize=7) # 100, 0.3, 7, 7
         self.lk_params = dict(
-            winSize=(15, 15),
+            winSize=(20, 20),
             maxLevel=2,
             criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03),
         )
@@ -52,7 +54,7 @@ class Markers_OF:  # Optical Flow
             keypoint_count = len(keypoints)
             # (num_points, 1, 2)
             keypoints = np.array([[[p.pt[0], p.pt[1]]] for p in keypoints], dtype=np.float32)
-            keypoints_mask = np.ones((keypoint_count,), dtype=np.bool)
+            keypoints_mask = np.ones((keypoint_count,), dtype=np.int8)
 
             self.keypoints_queue.append(keypoints)
             self.keypoints_mask_queue.append(keypoints_mask)
@@ -64,7 +66,6 @@ class Markers_OF:  # Optical Flow
 
             available_keypoints_indices = np.nonzero(prev_keypoints_mask)[0]
             available_prev_keypoints = prev_keypoints[available_keypoints_indices]
-            mask_indices_mapping = np.arange(len(prev_keypoints))[available_keypoints_indices]
             available_next_keypoints = np.zeros_like(available_prev_keypoints)
 
             available_next_keypoints, status, _ = cv2.calcOpticalFlowPyrLK(
@@ -77,7 +78,7 @@ class Markers_OF:  # Optical Flow
             next_keypoints_mask = np.zeros_like(prev_keypoints_mask)
             for i in range(len(available_next_keypoints)):
                 if status[i]:
-                    index = mask_indices_mapping[i]
+                    index = available_keypoints_indices[i]
                     next_keypoints[index] = available_next_keypoints[i]
                     next_keypoints_mask[index] = 1
             self.keypoints_queue.append(next_keypoints)
@@ -105,6 +106,36 @@ class Markers_OF:  # Optical Flow
             elapsed = (self.timestamp_queue[-1] - self.timestamp_queue[-2 - stride]) / (stride + 1)
             acceleration = (curr_velocity - prev_velocity) / elapsed
             self.acceleration_queue.append(acceleration)
+
+    def clustering(self):
+        keypoints = self.keypoints_queue[-1].reshape(-1, 2)
+        keypoints_mask = self.keypoints_mask_queue[-1]
+        available_keypoints_indices = np.nonzero(keypoints_mask)[0]
+        available_keypoints = keypoints[available_keypoints_indices]
+
+        clustering = DBSCAN(eps=12.5, min_samples=4).fit(available_keypoints) # TODO: Tune parameters (important)
+        unique_labels = set(clustering.labels_)
+        core_samples_mask = np.zeros_like(clustering.labels_, dtype=bool)
+        core_samples_mask[clustering.core_sample_indices_] = True
+
+        if self.is_visualize and True:
+            plt.cla()
+            colors = [plt.cm.Spectral(each) for each in np.linspace(0, 1, len(unique_labels))]
+            for k, col in zip(unique_labels, colors):
+                if k == -1:
+                    col = [0, 0, 0, 1]
+
+                class_member_mask = (clustering.labels_ == k)
+
+                xy = available_keypoints[class_member_mask & core_samples_mask]
+                plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col), markeredgecolor='k', markersize=14)
+
+                xy = available_keypoints[class_member_mask & ~core_samples_mask]
+                plt.plot(xy[:, 0], xy[:, 1], 'o', markerfacecolor=tuple(col), markeredgecolor='k', markersize=6)
+            plt.title('Estimated number of clusters: %d' % len(unique_labels))
+            plt.draw()
+            plt.pause(0.0001)
+
 
     def visualize(self):
         """Visualize the keypoints movement on the current frame."""
@@ -198,7 +229,7 @@ class Markers_OF:  # Optical Flow
 
         if self.is_timing:
             print("Markers: Visualize Time: ", time.time() - tic)
-
+   
     def run(self, frame):
         """Run marker tracking by calling all the functions."""
 
@@ -207,6 +238,7 @@ class Markers_OF:  # Optical Flow
             self.is_first_frame = False
         else:
             self.calc()
+            self.clustering()
             if self.is_visualize:
                 self.visualize()
             # raise RuntimeError("Stop")
@@ -229,8 +261,8 @@ def main():
             if cv2.waitKey(1) & 0xFF == ord("q"):
                 break
             toc = time.time()
-            print("FPS: ", 1 / (toc - tic))
-            # sys.write(f"FPS: {1 / (toc - tic)}\r")
+            # print("FPS: ", 1 / (toc - tic))
+            sys.stdout.write(f"FPS: {1 / (toc - tic)}\r")
     except KeyboardInterrupt:
         print("Keyboard Interrupt")
     finally:
