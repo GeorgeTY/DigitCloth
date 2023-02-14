@@ -116,7 +116,7 @@ class Markers_OF:  # Optical Flow
         available_keypoints_indices = np.nonzero(keypoints_mask)[0]
         available_keypoints = keypoints[available_keypoints_indices]
 
-        clustering = DBSCAN(eps=12.5, min_samples=4).fit(available_keypoints)  # TODO: Tune parameters (important)
+        clustering = DBSCAN(eps=12.5, min_samples=3).fit(available_keypoints)  # TODO: Tune parameters (important)
         unique_labels = set(clustering.labels_)
         core_samples_mask = np.zeros_like(clustering.labels_, dtype=bool)
         core_samples_mask[clustering.core_sample_indices_] = True
@@ -131,13 +131,11 @@ class Markers_OF:  # Optical Flow
                 class_member_mask = clustering.labels_ == k
 
                 xy = available_keypoints[class_member_mask & core_samples_mask]
-                plt.plot(xy[:, 0], xy[:, 1], "o", markerfacecolor=tuple(col), markeredgecolor="k", markersize=14)
+                plt.plot(xy[:, 0], 288 - xy[:, 1], "o", markerfacecolor=tuple(col), markeredgecolor="k", markersize=14)
 
                 xy = available_keypoints[class_member_mask & ~core_samples_mask]
-                plt.plot(xy[:, 0], xy[:, 1], "o", markerfacecolor=tuple(col), markeredgecolor="k", markersize=6)
+                plt.plot(xy[:, 0], 288 - xy[:, 1], "o", markerfacecolor=tuple(col), markeredgecolor="k", markersize=6)
             plt.title("Estimated number of clusters: %d" % len(unique_labels))
-            plt.draw()
-            plt.pause(0.0001)
 
     def visualize(self):
         """Visualize the keypoints movement on the current frame."""
@@ -266,6 +264,10 @@ def main():
         _ = gsmini.get_image((384, 288))
 
     try:
+        if markers.is_visualize:  # Prevent focus loss
+            plt.ion()
+            plt.show()
+
         while True:
             tic = time.time()
 
