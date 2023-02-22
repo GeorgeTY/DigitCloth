@@ -29,6 +29,9 @@ class Markers_OF:  # Optical Flow
         self.is_timing = False
         self.is_visualize = True
         self.is_reset = False
+        if self.is_visualize:  # Prevent focus loss
+            plt.ion()
+            plt.show()
 
     def track(self, frame):
         """Track the markers in the current frame."""
@@ -157,10 +160,6 @@ def main():
         _ = gsmini.get_image((384, 288))
 
     try:
-        if markers.is_visualize:  # Prevent focus loss
-            plt.ion()
-            plt.show()
-
         while True:
             tic = time.time()
 
