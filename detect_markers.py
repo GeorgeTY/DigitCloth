@@ -4,12 +4,11 @@ import time
 import numpy as np
 from collections import deque
 import matplotlib.pyplot as plt
-from sklearn.cluster import DBSCAN
 from connect_gsmini import connectGSmini
 from detect_blob import setDetectionParams, dotDetection
 
 
-class Markers_OF:  # Optical Flow
+class Markers:  # Optical Flow
     sample_length = 128
     dots_count = 284
 
@@ -25,7 +24,6 @@ class Markers_OF:  # Optical Flow
             maxLevel=2,
             criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 1, 0.03),  # 10, 0.03
         )
-        self.is_first_frame = True
         self.is_timing = False
         self.is_visualize = True
         self.is_reset = False
@@ -33,7 +31,19 @@ class Markers_OF:  # Optical Flow
             plt.ion()
             plt.show()
 
-    def track(self, frame):
+    def get_keypoints(self):
+        return self.keypoints_queue[-1].squeeze()  # Remove unwanted 1 dimension
+
+    def get_frame(self):
+        return self.frame_queue[-1]
+
+    def init(self, frame):
+        self.frame_queue.clear()
+        self.keypoints_queue.clear()
+        self.keypoints_mask_queue.clear()
+        self.track(frame, is_init=True)
+
+    def track(self, frame, is_init=False):
         """Track the markers in the current frame."""
         tic = time.time()
 
@@ -44,7 +54,7 @@ class Markers_OF:  # Optical Flow
         self.frame_queue.append(frame)
 
         keypoints, self.frame_curr_with_keypoints = dotDetection(self.blob_detector, frame)
-        if self.is_first_frame:
+        if is_init:
             # Capture the first frame and find the initial keypoints
             keypoint_count = len(keypoints)
             # (num_points, 1, 2)
@@ -121,26 +131,17 @@ class Markers_OF:  # Optical Flow
                 (255, 255, 255),
             )
             cv2.imshow("Optical Flow", frame_curr_with_flow_vectors)
-        # endregion
-
-        # region WindowMovement
-        cv2.moveWindow("Optical Flow", 200, 100)
+            cv2.moveWindow("Optical Flow", 200, 100)
         # endregion
 
         if self.is_timing:
             print("Markers: Visualize Time: ", time.time() - tic)
 
-    def reset(self):
-        """Reset the marker tracking."""
-        self.is_reset = True
-
-    def run(self, frame):
-        """Run marker tracking by calling all the functions."""
+    def update(self, frame, is_init=False):
+        """update marker tracking by calling all the functions."""
 
         self.track(frame)
-        if self.is_first_frame:
-            self.is_first_frame = False
-        elif self.is_reset:
+        if is_init:
             self.frame_queue.clear()
             self.keypoints_queue.clear()
             self.keypoints_mask_queue.clear()
@@ -149,12 +150,11 @@ class Markers_OF:  # Optical Flow
         else:
             if self.is_visualize:
                 self.visualize()
-            # raise RuntimeError("Stop")
 
 
 def main():
     gsmini = connectGSmini()
-    markers = Markers_OF()
+    markers = Markers()
 
     for _ in range(5):
         _ = gsmini.get_image((384, 288))
@@ -164,13 +164,13 @@ def main():
             tic = time.time()
 
             frame = gsmini.get_image((384, 288))
-            markers.run(frame)
+            markers.update(frame)
 
             getKey = cv2.waitKey(1)
             if getKey & 0xFF == ord("q"):
                 break
             elif getKey & 0xFF == ord("r"):
-                markers.reset()
+                markers.init(frame)
             toc = time.time()
             # print("FPS: ", 1 / (toc - tic))
             sys.stdout.write(f"FPS: {1 / (toc - tic):.2f}\r")
