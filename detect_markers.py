@@ -3,7 +3,6 @@ import cv2
 import time
 import numpy as np
 from collections import deque
-import matplotlib.pyplot as plt
 from connect_gsmini import connectGSmini
 from detect_blob import setDetectionParams, dotDetection
 
@@ -26,10 +25,6 @@ class Markers:  # Optical Flow
         )
         self.is_timing = False
         self.is_visualize = True
-        self.is_reset = False
-        if self.is_visualize:  # Prevent focus loss
-            plt.ion()
-            plt.show()
 
     def get_keypoints(self):
         return self.keypoints_queue[-1].squeeze()  # Remove unwanted 1 dimension
@@ -91,8 +86,7 @@ class Markers:  # Optical Flow
             self.keypoints_queue.append(next_keypoints)
             self.keypoints_mask_queue.append(next_keypoints_mask)
 
-        if self.is_timing:
-            print("Markers: Update Time: ", time.time() - tic)
+        print("Markers: Update Time: ", time.time() - tic) if self.is_timing else None
 
     def visualize(self):
         """Visualize the keypoints movement on the current frame."""
@@ -145,8 +139,6 @@ class Markers:  # Optical Flow
             self.frame_queue.clear()
             self.keypoints_queue.clear()
             self.keypoints_mask_queue.clear()
-            self.is_first_frame = True
-            self.is_reset = False
         else:
             if self.is_visualize:
                 self.visualize()

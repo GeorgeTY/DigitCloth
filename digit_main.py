@@ -8,8 +8,8 @@ import numpy as np
 from global_params import *
 import matplotlib.pyplot as plt
 from detect_markers import Markers
-
 from detect_deform import DelaunayTri
+from detect_edges import Edges
 from ros_comms import ros_talker
 from record_digit import setVideoEncoder
 from connect_gsmini import connectGSmini
@@ -19,9 +19,10 @@ def main():
     gsmini = connectGSmini()
     markers = Markers()
     delaunaytris = DelaunayTri()
+    edges = Edges()
 
     for _ in range(5):
-        frame = gsmini.get_image((384, 288)) # ROI doesn't do anything yet
+        frame = gsmini.get_image((384, 288))  # ROI doesn't do anything yet
 
     try:
         markers.init(frame)
@@ -32,6 +33,14 @@ def main():
             frame = gsmini.get_image((384, 288))
             markers.update(frame)
             delaunaytris.update(markers.get_frame(), markers.get_keypoints())
+            edges.update(
+                markers.get_frame(),
+                delaunaytris.get_visualized_frame(),
+                markers.get_keypoints(),
+                delaunaytris.tris,
+                delaunaytris.area_curr,
+                delaunaytris.area_diff,
+            )
 
             getKey = cv2.waitKey(1)
             if getKey & 0xFF == ord("q"):

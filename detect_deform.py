@@ -19,6 +19,9 @@ class DelaunayTri:
     def __get_area_diff(self, area_a, area_b) -> float:
         return area_b / area_a
 
+    def get_visualized_frame(self):
+        return self.frame_curr_with_tris
+
     def init(self, keypoints):
         self.tris, self.area_init = self.segment(keypoints)
         self.area_curr = np.zeros_like(self.area_init)

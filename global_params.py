@@ -8,8 +8,8 @@ minConvexity = 0.8
 minInertiaRatio = 0.01
 
 # for edgeDetection
-area_threshold = 300
+area_threshold = 10
 angle_threshold = 7 / 8  # * np.pi
-ad_upper = 1.3
-ad_lower = 0.7
-ad_ratio = 1.09
+ad_upper = 1.2
+ad_lower = 0.8
+ad_ratio = 1.2
