@@ -1,0 +1,1 @@
+bool edge_inView

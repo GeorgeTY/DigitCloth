@@ -1,0 +1,11 @@
+#moveMode: 0-joint postion 1-endeffect postion
+#pathMode: 0-一次插值Calc1JiTraje　1-阶跃CalcStepTraje　２－sin()
+#moveDuration: 默认为10s，完成一次运动指令花费的时间，在阶跃插值时不生效
+
+int8 moveMode
+int8 pathMode
+float64 moveDuration
+
+---
+
+bool success

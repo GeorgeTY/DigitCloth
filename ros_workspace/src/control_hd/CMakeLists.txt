@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(test_hd)
+project(control_hd)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -44,7 +44,7 @@ generate_messages(
 
 catkin_package(
  INCLUDE_DIRS include
- LIBRARIES test_hd
+ LIBRARIES control_hd
  CATKIN_DEPENDS hd_servo roscpp rospy std_msgs
  DEPENDS system_lib
 )
@@ -57,19 +57,16 @@ include_directories(
 
 
 add_executable(${PROJECT_NAME}
-# src/main.cpp
-src/cloth_manipulate.cpp
-# src/test_layer.cpp #主程序1：两布两层
-src/kukaservo_lib.cpp
-## src/test_kuka.cpp #测试kuka的程序
-# src/test_TwoCloth.cpp #主程序2：两布四层
-src/test_MoveSingleCloth.cpp #主程序3：单布移动
-
-# src/test_4_19.cpp #测试
-# src/test_4_26.cpp
-
-
+src/auto_clothmanipulation.cpp
+# src/kukaservo_lib.cpp
+src/AutoMoveSingleCloth.cpp #单布自适应移动,订阅节点消息，消息内容为下一操作单元的目标移动距离
 )
+
+# add_executable(${PROJECT_NAME}_main
+# src/use_automanipulation.cpp
+# src/kukaservo_lib.cpp
+# src/AutoMoveSingleCloth.cpp #单布自适应移动
+# )
 
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME}

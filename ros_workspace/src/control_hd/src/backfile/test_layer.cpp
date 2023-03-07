@@ -9,8 +9,6 @@
 #include "cloth_manipulate.h"
 #include "fingerTip_image/clothEdge.h"
 #include "kukaservo_lib.h"
-#include "test_hd/state.h"
-
 
 #define L_Start_X_Axis 0
 #define L_Start_Y_Axis 0
@@ -102,9 +100,6 @@ int main(int argc,char **argv){
     ros::Subscriber DigitL_sub=nh.subscribe<get_height::Height>("/Ldigit_height",1,boost::bind(&Digit_callback,_1,ref(current_height)));
     ros::Subscriber DigitR_sub=nh.subscribe<get_height::Height>("/Rdigit_height",1,boost::bind(&Digit_callback,_1,ref(current_height)));
     
-    ros::Publisher state_pub=nh.advertise<test_hd::state>("Cloth_Maipulation_State",1);
-    test_hd::state cloth_manipulation_state;
-
     /*布料操作的夹爪控制类*/
     Move_cloth move_cloth_layered;
     string pre_HdState=move_cloth_layered.get_HdControl_state();
@@ -198,8 +193,7 @@ int main(int argc,char **argv){
                     move_cloth_layered.Move_Cloth_out(msg_L,msg_R,current_height);
                     string cur_HdState=move_cloth_layered.get_HdControl_state();//根据状态信息的切换判断当前夹爪位置，保证只在布料紧贴亚克力表面时才进行分成检测            
 
-                    // if(pre_HdState=="turnL_clock"&&cur_HdState=="turnL_anticlock"&&flag_cloth/*触发条件，指尖的传来的图像，其中黑色的像素，超过一定的阈值*/){
-                    if(flag_cloth/*触发条件，指尖的传来的图像，其中黑色的像素，超过一定的阈值*/){
+                    if(pre_HdState=="turnL_clock"&&cur_HdState=="turnL_anticlock"&&flag_cloth/*触发条件，指尖的传来的图像，其中黑色的像素，超过一定的阈值*/){
                         hd_control.Adjust_Finger(msg_L,msg_R);
                         start_time=ros::Time::now();
                         Eflag_=Grab_SingleCloth;
@@ -291,9 +285,6 @@ int main(int argc,char **argv){
         ROS_INFO("RX: %lf",msg_R.X_Axis);
         ROS_INFO("RY: %lf",msg_R.Y_Axis);
         ROS_INFO("RZ_Angle: %lf",msg_R.Z_Angle);
-
-        cloth_manipulation_state.state=move_cloth_layered.get_HdControl_state();
-        state_pub.publish(cloth_manipulation_state);
         
         CmdR_pub.publish(msg_R);
         CmdL_pub.publish(msg_L);

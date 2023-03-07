@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<launch>
+        <arg name="side" default="left"/>
+        <arg name="sim" default="0"/><!--0:false   1:true-->
+
+        <rosparam command="load" file="$(find kukafri_hw)/config/camerahxz.yaml"/>
+        <rosparam command="load" file="$(find kukafri_hw)/config/homejoints.yaml"/>
+
+        
+        <group if="$(eval side == 'right')">
+                <node name="kukafri_hw" pkg="kukafri_hw" type="kukafri_hw"  output="screen" respawn="false" respawn_delay="0" 
+                        ns="/right" args="192.168.168.20 30200 right $(arg sim)">
+                </node>   
+        </group>
+
+        <group if="$(eval side == 'left')">
+                <node name="kukafri_hw" pkg="kukafri_hw" type="kukafri_hw"  output="screen" respawn="false" respawn_delay="0" 
+                        ns="/left" args="192.168.168.10 30200 left $(arg sim)">
+                </node>  
+        </group>
+
+        <group if="$(eval side == 'dual')">
+                <node name="kukafri_hw" pkg="kukafri_hw" type="kukafri_hw"  output="screen" respawn="false" respawn_delay="0" 
+                        ns="/right" args="192.168.168.20 30200 right $(arg sim)">
+                </node>   
+
+                <node name="kukafri_hw" pkg="kukafri_hw" type="kukafri_hw"  output="screen" respawn="false" respawn_delay="0" 
+                        ns="/left" args="192.168.168.10 30200 left $(arg sim)">
+                </node>  
+        </group>
+
+        <group if="$(arg sim)">
+                <include file="$(find iiwa_gazebo)/launch/iiwa_gazebo.launch">
+                        <arg name="hardware_interface" value="PositionJointInterface"/>
+                        <arg name="robot_name" value="iiwa" />
+                        <arg name="model" value="iiwa"/>
+                        <arg name="trajectory" value="false" />
+                </include>
+        </group>
+
+</launch>

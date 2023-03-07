@@ -1,4 +1,0 @@
-<launch>
-    <node pkg="hd_servo" name="hd_servo" type="hd_servo"/>
-    <node pkg="digitcloth" name="digitcloth" type="digitcloth"/>
-</launch>
