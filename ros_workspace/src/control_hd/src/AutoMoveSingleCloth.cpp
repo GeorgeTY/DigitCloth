@@ -15,62 +15,69 @@
 #include "std_msgs/Int32.h"
 #include "std_msgs/Float32.h"
 
-
 using namespace std;
 int flag_SIGINT = 1;
 
-void Digit_callback(const get_height::Height::ConstPtr& msg,get_height::Height &current_height){
+void Digit_callback(const get_height::Height::ConstPtr &msg, get_height::Height &current_height)
+{
     // ROS_INFO("Callback: get digit info !");
-    current_height=*msg;  
+    current_height = *msg;
     return;
 }
 
-void Target_callback(const std_msgs::Int32::ConstPtr& msg, int &target_distance) {
+void Target_callback(const std_msgs::Int32::ConstPtr &msg, int &target_distance)
+{
     target_distance = msg->data;
     return;
 }
 
-void OpticalFlow_callback(const std_msgs::Float32::ConstPtr& msg, float &optical_flow) {
+void OpticalFlow_callback(const std_msgs::Float32::ConstPtr &msg, float &optical_flow)
+{
     optical_flow = msg->data;
     return;
 }
 
-int main(int argc,char **argv){
+int main(int argc, char **argv)
+{
 
     ros::init(argc, argv, "control_hd");
     ros::NodeHandle nh;
-    ros::Publisher CmdL_pub=nh.advertise<hd_servo::EndPos>("Goal_EndPos_L",1);
-    ros::Publisher CmdR_pub=nh.advertise<hd_servo::EndPos>("Goal_EndPos_R",1);//当前策略只需要发布一次右侧手位置
+    ros::Publisher CmdL_pub = nh.advertise<hd_servo::EndPos>("Goal_EndPos_L", 1);
+    ros::Publisher CmdR_pub = nh.advertise<hd_servo::EndPos>("Goal_EndPos_R", 1); // 当前策略只需要发布一次右侧手位置
     hd_servo::EndPos msg_L;
     hd_servo::EndPos msg_R;
-    msg_L.X_Axis=InitL_PosX;msg_L.Y_Axis=132.0;msg_L.Z_Angle=InitL_PosAngle;
-    msg_R.X_Axis=0;msg_R.Y_Axis=135.0;msg_R.Z_Angle=InitR_PosAngle;
-    
-    ros::Publisher state_pub=nh.advertise<control_hd::state>("Cloth_Maipulation_State",1);
+    msg_L.X_Axis = InitL_PosX;
+    msg_L.Y_Axis = 132.0;
+    msg_L.Z_Angle = InitL_PosAngle;
+    msg_R.X_Axis = 0;
+    msg_R.Y_Axis = 135.0;
+    msg_R.Z_Angle = InitR_PosAngle;
+
+    ros::Publisher state_pub = nh.advertise<control_hd::state>("Cloth_Maipulation_State", 1);
     control_hd::state cloth_manipulation_state;
 
     get_height::Height current_height;
     // std_msgs::Int32 target_distance;
     int target_distance = 0;
     /*Ldigit_height现被安装在Finger_R*/
-    ros::Subscriber DigitL_sub=nh.subscribe<get_height::Height>("/Ldigit_height",1,boost::bind(&Digit_callback,_1,ref(current_height)));
-    ros::Subscriber DigitR_sub=nh.subscribe<get_height::Height>("/Rdigit_height",1,boost::bind(&Digit_callback,_1,ref(current_height)));
-    
+    ros::Subscriber DigitL_sub = nh.subscribe<get_height::Height>("/Ldigit_height", 1, boost::bind(&Digit_callback, _1, ref(current_height)));
+    ros::Subscriber DigitR_sub = nh.subscribe<get_height::Height>("/Rdigit_height", 1, boost::bind(&Digit_callback, _1, ref(current_height)));
+
     // 订阅目标移动距离
-    ros::Subscriber Distance_sub = nh.subscribe<std_msgs::Int32>("/Target_Distance",1,boost::bind(&Target_callback,_1,ref(target_distance)));
+    ros::Subscriber Distance_sub = nh.subscribe<std_msgs::Int32>("/Target_Distance", 1, boost::bind(&Target_callback, _1, ref(target_distance)));
     // 订阅光流位移
     float optical_flow = 0;
-    ros::Subscriber OpticalFlow_sub = nh.subscribe<std_msgs::Float32>("Turn_action_OpticalFlow", 1 , boost::bind(&OpticalFlow_callback,_1,ref(optical_flow)));
+    ros::Subscriber OpticalFlow_sub = nh.subscribe<std_msgs::Float32>("Turn_action_OpticalFlow", 1, boost::bind(&OpticalFlow_callback, _1, ref(optical_flow)));
 
     Move_cloth move_cloth_in;
-    move_cloth_in.Init(msg_L,msg_R);
+    move_cloth_in.Init(msg_L, msg_R);
 
-    ros::Rate loop_rate(10);  //频率高会导致只有单手能收到信号 不知道与什么有关
-     
-    ros::Time start_time=ros::Time::now();
+    ros::Rate loop_rate(10); // 频率高会导致只有单手能收到信号 不知道与什么有关
+
+    ros::Time start_time = ros::Time::now();
     while (ros::ok() && flag_SIGINT)
-    {   
-        if(ros::Time::now()-start_time<ros::Duration(10))
+    {
+        if (ros::Time::now() - start_time < ros::Duration(10))
             continue;
         // 后期应该把Move_cloth_in的最后一个参数，目标移动距离作为话题消息
         move_cloth_in.MoveClothin(msg_L, msg_R, current_height, target_distance, optical_flow);
@@ -99,11 +106,10 @@ int main(int argc,char **argv){
         // ROS_INFO("forth_row_height%lf %lf %lf",current_height.height_data3[0],current_height.height_data3[1],current_height.height_data3[2]);
         // ROS_INFO("fifth_row_height%lf %lf %lf",current_height.height_data4[0],current_height.height_data4[1],current_height.height_data4[2]);
         // ROS_INFO("sixth_row_height%lf %lf %lf",current_height.height_data5[0],current_height.height_data5[1],current_height.height_data5[2]);
-        
+
         CmdR_pub.publish(msg_R);
         CmdL_pub.publish(msg_L);
-      
-     
+
         ros::spinOnce();
         loop_rate.sleep();
     }

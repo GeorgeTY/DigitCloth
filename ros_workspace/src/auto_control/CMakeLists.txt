@@ -43,10 +43,9 @@ generate_messages(
 )
 
 catkin_package(
- INCLUDE_DIRS include
+#  INCLUDE_DIRS include
  LIBRARIES auto_control
  CATKIN_DEPENDS hd_servo roscpp rospy std_msgs control_hd
- DEPENDS system_lib
 )
 
 

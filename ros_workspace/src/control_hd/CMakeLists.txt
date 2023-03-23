@@ -46,7 +46,6 @@ catkin_package(
  INCLUDE_DIRS include
  LIBRARIES control_hd
  CATKIN_DEPENDS hd_servo roscpp rospy std_msgs
- DEPENDS system_lib
 )
 
 

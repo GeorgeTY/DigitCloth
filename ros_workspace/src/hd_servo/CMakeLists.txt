@@ -36,7 +36,6 @@ catkin_package(
  INCLUDE_DIRS include
 #  LIBRARIES hd_servo  #添加后导致包test_hd 无法链接此库
  CATKIN_DEPENDS roscpp rospy std_msgs
- DEPENDS system_lib
  message_runtime
  
 )

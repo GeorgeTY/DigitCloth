@@ -21,10 +21,9 @@ generate_messages(
 )
 
 catkin_package(
-INCLUDE_DIRS include
+# INCLUDE_DIRS include
 # LIBRARIES get_height
 CATKIN_DEPENDS rospy cv_bridge message_runtime std_msgs roscpp
-DEPENDS system_lib 
 )
 
 include_directories(
