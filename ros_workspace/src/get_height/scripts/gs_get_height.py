@@ -5,10 +5,14 @@ import os
 import rospy
 import time
 from scipy import ndimage
+from datetime import datetime
 from gelsight import gsdevice
 from gelsight import gs3drecon
 from get_height.msg import Height
 from test_hd.msg import state
+from matplotlib import pyplot as plt
+
+cms = "test_hd_not_started"
 
 
 def callback(data):
@@ -93,7 +97,7 @@ def array_show():
     dm = nn.get_depthmap(frame, MASK_MARKERS_FLAG)
 
     if frame_count < 60:
-        return None
+        return None, x2
 
     prev_gray = gray
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -150,8 +154,12 @@ def array_show():
             gray, mask=height_mask, maxCorners=50, qualityLevel=0.2, minDistance=7, blockSize=3
         )
 
-        x_bar = x_total / len(new_corners)
-        y_bar = y_total / len(new_corners)
+        if len(new_corners) > 0:
+            x_bar = x_total / len(new_corners)
+            y_bar = y_total / len(new_corners)
+        else:
+            x_bar = -0.45
+            y_bar = -0.5
 
         x1 = new_center[0] - old_center[0]
         y1 = new_center[1] - old_center[1]
@@ -212,7 +220,7 @@ def array_show():
             else:
                 height_array[i][j] = mean
 
-    return height_array
+    return height_array, x2
 
 
 def talker():
@@ -225,11 +233,21 @@ def talker():
 
     rate = rospy.Rate(10)  # 10hz
 
+    plt.axis([0, 500, -100, 200])
+    plt.title("OpticalFlow Result")
+    plt.xlabel("sample count")
+    plt.ylabel("x2(px)")
+    sample_count = 0
+
     while not rospy.is_shutdown():
         msg = Height()
-        height_array = array_show()
+        height_array, x2 = array_show()
         if height_array is None:
             continue
+
+        plt.scatter(sample_count, x2, s=2, c="r")
+        plt.pause(0.0001)
+        sample_count += 1
 
         msg.which_digit = "Digit_R"
         msg.height_data0[0] = height_array[0][5]
@@ -266,5 +284,8 @@ if __name__ == "__main__":
     except rospy.ROSInterruptException:
         pass
     finally:
+        now = datetime.now()
+        filename = "./output/ofresult_x2_" + now.strftime("%Y%m%d_%H%M%S") + ".png"
+        plt.savefig(filename)
         cv2.destroyAllWindows()
         dev.stop_video()
