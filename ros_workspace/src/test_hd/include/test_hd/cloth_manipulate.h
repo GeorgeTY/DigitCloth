@@ -30,6 +30,7 @@
 #define Target_height 15 // 0.5
 #define Theta_threshold 50.0
 #define w_deg 5.0
+#define X_Threshold (0 + 10)
 
 using namespace std;
 

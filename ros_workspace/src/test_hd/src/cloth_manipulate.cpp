@@ -123,10 +123,16 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R,
     case force_control:
         ROS_INFO("force_control");
         /*在力控时很容易出现对不准失控的情况，所以力控过程要将手指对正，然后校正x*/
+        if (msg_R.X_Axis < X_Threshold) // 保护硅胶
+        {
+            ROS_INFO("Threshold Reached! Exiting Force Control");
+            flag_ = init_Pos_after_force;
+        }
         if ((sum_height - init_sum_height) < target_height)
         {
             /*力控*/
             msg_R.X_Axis = msg_R.X_Axis - deta_height / 10;
+            ROS_INFO("Current X: %lf", msg_R.X_Axis);
         }
         else
         {

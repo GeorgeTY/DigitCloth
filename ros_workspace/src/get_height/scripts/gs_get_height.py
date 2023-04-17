@@ -4,15 +4,90 @@ import cv2
 import os
 import rospy
 import time
-from scipy import ndimage
+import curses
 from datetime import datetime
 from gelsight import gsdevice
 from gelsight import gs3drecon
 from get_height.msg import Height
 from test_hd.msg import state
 from matplotlib import pyplot as plt
+import cProfile
+import pstats
+import io
+
+pr = cProfile.Profile()
+pr.enable()
 
 cms = "test_hd_not_started"
+
+old_stdout = sys.stdout
+sys.stdout = open(os.devnull, "w")  # This prevents gelsight from printing to the console
+
+stdscr = curses.initscr()
+curses.noecho()
+curses.cbreak()
+
+
+def reg_svd(X, Y):
+    # X and Y are 2D matrices with the same number of rows
+    # X is the matrix of points in the reference image
+    # Y is the matrix of points in the current image
+    # X and Y are of size N x 2
+    # N is the number of points
+
+    # compute the centroids of the points
+    mx = np.mean(X, axis=0)
+    my = np.mean(Y, axis=0)
+
+    # subtract the centroids from the points
+    X0 = X - mx
+    Y0 = Y - my
+
+    # compute the covariance matrix
+    C = np.dot(np.transpose(X0), Y0)
+
+    # compute the optimal rotation matrix
+    # using the singular value decomposition
+    V, S, Wt = np.linalg.svd(C)
+    d = (np.linalg.det(V) * np.linalg.det(Wt)) < 0.0
+
+    if d:
+        S[-1] = -S[-1]
+        V[:, -1] = -V[:, -1]
+
+    # create Rotation matrix R
+    R = np.dot(V, Wt)
+
+    # compute the translation vector T
+    T = my - np.dot(R, mx)
+
+    return R, T
+
+
+def report_result(R, T, R_sum, T_sum, R_selected, T_selected, tic):
+    global frame_count, cms
+    stdscr.addstr(0, 0, f"=== Time: {datetime.now()}, FrameNo.{frame_count}")
+    stdscr.addstr(
+        1,
+        0,
+        f"=== R: {np.array2string(R.flatten(), formatter={'float': lambda x: f'{x:.3f}'})}, "
+        + f"T: {np.array2string(T.flatten(), formatter={'float': lambda x: f'{x:.3f}'})}",
+    )
+    stdscr.addstr(
+        2,
+        0,
+        f"=== R_sum: {np.array2string(R_sum.flatten(), formatter={'float': lambda x: f'{x:.3f}'})}, "
+        + f"T_sum: {np.array2string(T_sum.flatten(), formatter={'float': lambda x: f'{x:.3f}'})}",
+    )
+    stdscr.addstr(
+        3,
+        0,
+        f"=== R_selected: {np.array2string(R_selected.flatten(), formatter={'float': lambda x: f'{x:.3f}'})}, "
+        + f"T_selected: {np.array2string(T_selected.flatten(), formatter={'float': lambda x: f'{x:.3f}'})}",
+    )
+    stdscr.addstr(3, 0, f"=== State: {cms}")
+    stdscr.addstr(4, 0, f"=== FPS: {1/(time.time()-tic)}")
+    stdscr.refresh()
 
 
 def callback(data):
@@ -22,14 +97,6 @@ def callback(data):
 
 def listener():
     rospy.Subscriber("Cloth_Maipulation_State", state, callback)
-
-
-def get_diff_img(img1, img2):
-    return np.clip((img1.astype(int) - img2.astype(int)), 0, 255).astype(np.uint8)
-
-
-def get_diff_img_2(img1, img2):
-    return (img1 * 1.0 - img2) / 255.0 + 0.5
 
 
 GPU = False
@@ -75,7 +142,7 @@ magnitude_total = 0
 angle_total = 0
 
 gray, prev_gray = cv2.cvtColor(f0, cv2.COLOR_BGR2GRAY), cv2.cvtColor(f0, cv2.COLOR_BGR2GRAY)
-feature_params = dict(maxCorners=100, qualityLevel=0.3, minDistance=1, blockSize=2)  # 100, 0.3, 7, 7
+feature_params = dict(maxCorners=100, qualityLevel=0.5, minDistance=5, blockSize=2)
 lk_params = dict(winSize=(20, 20), maxLevel=4, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 1, 0.03))
 
 clear_corners = True
@@ -85,34 +152,26 @@ old_corners = None
 old_center, new_center = None, None
 x2, y2 = 0, 0
 x1_sum, y1_sum = 0, 0
-count = 0
+R, R_sum, R_selected = np.eye(2), np.eye(2), np.eye(2)
+T, T_sum, T_selected = np.zeros((2,)), np.zeros((2,)), np.zeros((2,))
 
 
 def array_show():
     tic = time.time()
-    global flow_0_total, flow_1_total, magnitude_total, angle_total, gray, prev_gray, new_corner_flag, old_corners, frame_count, is_init, old_center, new_center, x2, y2, x1_sum, y1_sum, count, cms
+    global flow_0_total, flow_1_total, magnitude_total, angle_total, gray, prev_gray, new_corner_flag, old_corners
+    global frame_count, is_init, cms, x2, y2, R, T, R_sum, T_sum, R_selected, T_selected
     frame = dev.get_image(roi)
     frame_count += 1
 
     dm = nn.get_depthmap(frame, MASK_MARKERS_FLAG)
 
-    if frame_count < 60:
-        return None, x2
+    if frame_count < 60:  # GelSight takes about 60 frames to warm up
+        return None, x2, y2
+
+    sys.stdout = old_stdout  # Allowing print statements to be printed on the terminal
 
     prev_gray = gray
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-    # flow = cv2.calcOpticalFlowFarneback(prev_gray, gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
-    # flow_0_total += np.sum(flow[..., 0])
-    # flow_1_total += np.sum(flow[..., 1])
-
-    # magnitude, angle = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-    # mask[..., 0] = angle * 180 / np.pi / 2
-    # mask[..., 2] = cv2.normalize(magnitude, None, 0, 255, cv2.NORM_MINMAX)
-    # rgb = cv2.cvtColor(mask, cv2.COLOR_HSV2BGR)
-    # rgb = cv2.putText(
-    #     rgb, "OF " + f"{flow_0_total:.1f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2, cv2.LINE_AA
-    # )
 
     height_mask = np.zeros_like(dm, dtype=np.uint8)
     height_mask[dm < -1.5] = 1
@@ -123,20 +182,50 @@ def array_show():
     height_sum = np.sum(height_mask)
 
     if height_sum != 0 and old_corners is None:
-        old_corners = cv2.goodFeaturesToTrack(
-            gray, mask=height_mask, maxCorners=50, qualityLevel=0.2, minDistance=7, blockSize=3
-        )
-        if old_corners is not None:
-            old_center = (np.mean(old_corners[:, :, 0]), np.mean(old_corners[:, :, 1]))
-    elif height_sum != 0 and old_corners is not None:
+        old_corners = cv2.goodFeaturesToTrack(gray, mask=height_mask, **feature_params)
+    elif height_sum != 0 and old_corners is not None and len(old_corners) > 2:
         update_corners, status, errors = cv2.calcOpticalFlowPyrLK(prev_gray, gray, old_corners, None, **lk_params)
 
         status = status.flat
         new_corners = update_corners[status == 1]
         old_corners = old_corners[status == 1]
 
-        x_total = 0.0
-        y_total = 0.0
+        new_corners = new_corners.squeeze()
+        old_corners = old_corners.squeeze()
+
+        if len(new_corners) != len(old_corners):
+            print("Error: new_corners and old_corners are not same length")
+            return None, x2, y2
+
+        # --- Registration here --- #
+        # old_c = np.mean(old_corners, axis=1)
+        # new_c = np.mean(new_corners, axis=1)
+
+        # q1 = old_corners - old_c
+        # q2 = new_corners - new_c
+
+        # H = np.matmul(q1, q2.T)
+        # U, X, V_t = np.linalg.svd(H)
+        # R = np.matmul(V_t.T, U.T)
+        # T = new_c - np.matmul(R, old_c)
+
+        R, T = reg_svd(old_corners, new_corners)
+
+        result = np.matmul(R, old_corners.T).T + T
+
+        # sum R and T
+        R_sum = np.matmul(R_sum, R)
+        T_sum += T
+        x2 = T_sum[0]
+        y2 = T_sum[1]
+        # select by cms
+        if cms == "turnL_clock":
+            R_selected = np.matmul(R_selected, R)
+            T_selected += T
+        # --- Registration here --- #
+
+        # x_total = 0.0
+        # y_total = 0.0
 
         for i, (new, old) in enumerate(zip(new_corners, old_corners)):
             a, b = new.ravel()
@@ -144,40 +233,14 @@ def array_show():
             a, b, c, d = int(a), int(b), int(c), int(d)
             cv2.line(canvas, (a, b), (c, d), (0, 255, 0), 2)
             ## calculate movement sum
-            x_total += a - c
-            y_total += b - d
+            # x_total += a - c
+            # y_total += b - d
             # cv2.circle(canvas, (a, b), 3, (0, 0, 255), -1)
-        if old_corners is not None:
-            new_center = (np.mean(new_corners[:, :, 0]), np.mean(new_corners[:, :, 1]))
-            old_center = (np.mean(old_corners[:, :, 0]), np.mean(old_corners[:, :, 1]))
-        old_corners = cv2.goodFeaturesToTrack(
-            gray, mask=height_mask, maxCorners=50, qualityLevel=0.2, minDistance=7, blockSize=3
-        )
+        old_corners = cv2.goodFeaturesToTrack(gray, mask=height_mask, **feature_params)
 
-        if len(new_corners) > 0:
-            x_bar = x_total / len(new_corners)
-            y_bar = y_total / len(new_corners)
-        else:
-            x_bar = -0.45
-            y_bar = -0.5
-
-        x1 = new_center[0] - old_center[0]
-        y1 = new_center[1] - old_center[1]
-        # x2 += x_bar - x1
-        # y2 += y_bar - y1
-        x2 += x_bar + 0.45  # Drift correction
-        y2 += y_bar + 0.5
-        x1_sum += x1
-        y1_sum += y1
-
-        count += 1
-        x1_bar = x1_sum / (count)
-        y1_bar = y1_sum / (count)
-
-        # print(f"x: {x_bar:6.2f}, y: {y_bar:6.2f}, x2: {x2:6.2f}, y2: {y2:6.2f}, x1: {x1_bar:6.2f}, y1: {y1_bar:6.2f}")
-        sys.stdout.write(
-            f"=== FPS: {float(1/(time.time()-tic)):4.2f}, x2: {x2:6.2f}, y2: {y2:6.2f}, CMS: {cms:15s} ===\r"
-        )
+        # sys.stdout.write(
+        #     f"=== FPS: {float(1/(time.time()-tic)):4.2f}, x2: {x2:6.2f}, y2: {y2:6.2f}, CMS: {cms:15s} ===\r"
+        # )
 
         # if corners is not None:
 
@@ -192,6 +255,8 @@ def array_show():
         cv2.imshow("result", result)
     else:
         old_corners = None
+
+    report_result(R, T, R_sum, T_sum, R_selected, T_selected, tic)
 
     cv2.imshow("frame", frame)
     # cv2.imshow("dense optical flow", rgb)
@@ -220,7 +285,7 @@ def array_show():
             else:
                 height_array[i][j] = mean
 
-    return height_array, x2
+    return height_array, x2, y2
 
 
 def talker():
@@ -233,20 +298,32 @@ def talker():
 
     rate = rospy.Rate(10)  # 10hz
 
-    plt.axis([0, 500, -100, 200])
-    plt.title("OpticalFlow Result")
-    plt.xlabel("sample count")
-    plt.ylabel("x2(px)")
+    fig = plt.figure(1)
+    fig.set_size_inches(6, 16)
     sample_count = 0
 
     while not rospy.is_shutdown():
         msg = Height()
-        height_array, x2 = array_show()
+        height_array, x2, y2 = array_show()
         if height_array is None:
             continue
 
+        plt.subplot(211)
+        plt.axis([0, 500, -200, 200])
+        plt.title("OpticalFlow Result")
+        plt.xlabel("sample count")
+        plt.ylabel("x2(px)(Red)/y2(px)(Blue)")
         plt.scatter(sample_count, x2, s=2, c="r")
-        plt.pause(0.0001)
+        plt.scatter(sample_count, y2, s=2, c="b")
+
+        plt.subplot(212)
+        plt.axis([-200, 200, -200, 200])
+        plt.title("Estimated Movement")
+        plt.xlabel("x(px)")
+        plt.ylabel("y(px)")
+        plt.scatter(x2, y2, s=2, c="b")
+
+        # plt.pause(0.0001)
         sample_count += 1
 
         msg.which_digit = "Digit_R"
@@ -289,3 +366,13 @@ if __name__ == "__main__":
         plt.savefig(filename)
         cv2.destroyAllWindows()
         dev.stop_video()
+        curses.echo()
+        curses.nocbreak()
+        curses.endwin()
+
+        pr.disable()
+        s = io.StringIO()
+        sortby = "cumulative"
+        ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+        ps.print_stats()
+        pr.dump_stats("output/profile_" + now.strftime("%Y%m%d_%H%M%S") + ".prof")
