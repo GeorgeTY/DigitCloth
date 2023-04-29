@@ -1,37 +1,21 @@
 import cv2
-from connect_gsmini import connectGSmini
+import numpy as np
 
+# 创建一个正方形
+square = np.zeros((300, 300), np.uint8)
+square[50:250, 50:250] = 255
 
-feature_params = dict(maxCorners=100, qualityLevel=0.5, minDistance=5, blockSize=2)
+# 定义旋转矩阵和平移矩阵
+R = cv2.getRotationMatrix2D((150, 150), 30, 1)
+T = np.float32([[1, 0, 50], [0, 1, -30]])
 
+# 进行刚性变换
+square_rotated = cv2.warpAffine(square, R, (300, 300))
+square_transformed = cv2.warpAffine(square_rotated, T, (300, 300))
 
-def main():
-    gsmini = connectGSmini()
-
-    try:
-        while True:
-            frame = gsmini.get_image((320, 240))
-
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            old_corners = cv2.goodFeaturesToTrack(gray, **feature_params)
-
-            frm_with_keypoints = frame.copy()
-
-            for corner in old_corners:
-                x, y = corner.ravel()
-                x, y = int(x), int(y)
-                cv2.circle(frm_with_keypoints, (x, y), 3, 255, -1)
-
-            # Show the image
-            cv2.imshow("gsmini", frm_with_keypoints)
-            getKey = cv2.waitKey(1)
-            if getKey == 27 or getKey == ord("q"):  # ESC or q
-                break
-    except KeyboardInterrupt:
-        gsmini.disconnect()
-        cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    main()
+# 显示结果
+cv2.imshow("Original Square", square)
+cv2.imshow("Rotated Square", square_rotated)
+cv2.imshow("Transformed Square", square_transformed)
+cv2.waitKey(0)
+cv2.destroyAllWindows()

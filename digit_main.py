@@ -1,61 +1,41 @@
-import os
-import sys
 import cv2
-import time
-import rospy
-import platform
-import numpy as np
-from global_params import *
-import matplotlib.pyplot as plt
-from detect_markers import Markers
-from detect_deform import DelaunayTri
-from detect_edges import Edges
-from ros_comms import ros_talker
-from record_digit import setVideoEncoder
-from connect_gsmini import connectGSmini
+import multiprocessing as mp
+from digit_device import Device
+from digit_markers import Markers
+from digit_odometer import Odometer
 
 
 def main():
-    gsmini = connectGSmini()
+    gsmini = Device()
     markers = Markers()
-    delaunaytris = DelaunayTri()
-    edges = Edges()
+    odometer = Odometer()
 
-    for _ in range(5):
-        frame = gsmini.get_image((384, 288))  # ROI doesn't do anything yet
+    frame_queue = mp.Queue()
+    result_queue = mp.Queue()
+    visualize_queue = mp.Queue()
 
+    gsmini.run(frame_queue)
+    markers.run(frame_queue, result_queue,visualize_queue)
+    odometer.run(frame_queue, result_queue,visualize_queue)
+
+    # Visualize
     try:
-        markers.init(frame)
-        delaunaytris.init(markers.get_keypoints())
         while True:
-            tic = time.time()
-
-            frame = gsmini.get_image((384, 288))
-            markers.update(frame)
-            delaunaytris.update(markers.get_frame(), markers.get_keypoints())
-            edges.update(
-                markers.get_frame(),
-                delaunaytris.get_visualized_frame(),
-                markers.get_keypoints(),
-                delaunaytris.tris,
-                delaunaytris.area_curr,
-                delaunaytris.area_diff,
-            )
+            packed_frames = visualize_queue.get()
+            if packed_frames["Process"] == "Markers":
+                cv2.imshow("Markers | Flow Vectors", packed_frames["frame_curr_with_flow_vectors"])
+                cv2.imshow("Markers | Triangles", packed_frames["frame_curr_with_tris"])
+                cv2.imshow("Markers | Edges", packed_frames["frame_curr_with_edges"])
+            if packed_frames["Process"] == "Odometer":
+                cv2.imshow("Odometer | Tracking", packed_frames["result"])
 
             getKey = cv2.waitKey(1)
             if getKey & 0xFF == ord("q"):
                 break
-            elif getKey & 0xFF == ord("r") or getKey & 0xFF == ord("i"):
-                markers.init(frame)
-                delaunaytris.init(markers.get_keypoints())
-
-            toc = time.time()
-            sys.stdout.write(f"FPS: {1 / (toc - tic):.2f}\r")
-    except KeyboardInterrupt:
-        print("Keyboard Interrupt")
     finally:
-        cv2.destroyAllWindows()
-        gsmini.stop_video()
+        gsmini.stop()
+        markers.stop()
+        odometer.stop()
 
 
 if __name__ == "__main__":
