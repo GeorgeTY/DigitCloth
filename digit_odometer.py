@@ -1,4 +1,5 @@
 import cv2
+import sys
 import time
 import os
 import rospy
@@ -78,6 +79,19 @@ class Odometer:
         return R, T
 
     def odometer(self, frame_queue, result_queue, visualize_queue):
+        import matplotlib.pyplot as plt
+        import matplotlib.patches as patches
+        from matplotlib.transforms import Affine2D
+
+        fig, ax = plt.subplots(figsize=(10, 10), num="Odometer | View Port")
+        ax.set_xlim([0, 1000])
+        ax.set_ylim([0, 1000])
+        rect_cloth = patches.Rectangle((100, 100), 800, 800, color="green")
+        rect_gelsight = patches.Rectangle((426, 410), 147, 180, alpha=0.5, color="red")
+        ax.add_patch(rect_cloth)
+        ax.add_patch(rect_gelsight)
+        plt.pause(0.1)
+
         from gelsight import gs3drecon  # import outside will cause error
 
         model_file_path = "/home/ratiomiith/Development/DigitCloth/ros_workspace/src/get_height/scripts/"
@@ -96,8 +110,8 @@ class Odometer:
         try:
             while True:
                 tic = time.time()
+
                 frame = frame_queue.get()
-                print("Odometer | Frame received")
                 frame_count += 1
                 depthmap = nn.get_depthmap(frame, mask_markers=False)
                 frame = self.crop_anything(frame, self.roi)  # Discard the Markers area
@@ -112,7 +126,6 @@ class Odometer:
                 depth_mask = self.crop_anything(depth_mask, self.roi)
 
                 contact_check = np.sum(depth_mask)
-                print(f"Contact Check: {contact_check}")
 
                 if (
                     contact_check != 0 and prev_corners is None
@@ -121,7 +134,9 @@ class Odometer:
                     prev_gray = gray
                 elif contact_check != 0 and prev_corners is not None and len(prev_corners) > 2:
                     # Do odometer
-                    curr_corners, _, _ = cv2.calcOpticalFlowPyrLK(prev_gray, gray, prev_corners, None, **self.lk_params)
+                    curr_corners, _, _ = cv2.calcOpticalFlowPyrLK(
+                        prev_gray, gray, prev_corners, None, **self.lk_params
+                    )  # TODO: the tracking seems malfunctioning
                     curr_corners = curr_corners.squeeze()
                     prev_corners = prev_corners.squeeze()
 
@@ -131,22 +146,35 @@ class Odometer:
                     self.R_sum = np.matmul(self.R_sum, R)
                     self.T_sum = self.T_sum + T
 
+                    # Visualize
+                    M = Affine2D().from_values(
+                        self.R_sum[0, 0],
+                        self.R_sum[0, 1],
+                        self.R_sum[1, 0],
+                        self.R_sum[1, 1],
+                        self.T_sum[0],
+                        self.T_sum[1],
+                    )
+                    rect_gelsight.set_transform(M)
+                    plt.pause(0.001)
+
                     if self.cms == "turnL_clock":
                         self.R_selected = np.matmul(self.R_selected, R)
                         self.T_selected = self.T_selected + T
-
-                    prev_corners = cv2.goodFeaturesToTrack(prev_gray, mask=depth_mask, **self.feature_params)
-                    prev_gray = gray
 
                     self.visualize(
                         frame, prev_corners, curr_corners, depth_mask, visualize_queue
                     ) if self.is_visualize else None
 
-                    packed_results = {"Process": "Odometer", "R": self.R_sum, "T": self.T_sum}
-                    result_queue.put(packed_results)
+                    prev_corners = cv2.goodFeaturesToTrack(prev_gray, mask=depth_mask, **self.feature_params)
+                    prev_gray = gray
                 else:
                     prev_corners = None
-                print(f"Odometer | fps: {1/(time.time()-tic)}")
+
+                packed_results = {"Process": "Odometer", "R": self.R_sum, "T": self.T_sum}
+                result_queue.put(packed_results)
+
+                sys.stdout.write(f"FPS: {1/(time.time()-tic):.2f}, Contact Check: {contact_check}\r")
         except KeyboardInterrupt:
             print("Odometer | KeyboardInterrupt")
 
@@ -190,13 +218,13 @@ def main():
     result_queue = mp.Queue()
     visualize_queue = mp.Queue()
 
-    gsmini.run(frame_queue)  # TODO: Restart and fix the reading problem
+    gsmini.run(frame_queue)
     odometer.run(frame_queue, result_queue, visualize_queue)
 
     # Visualize
     try:
         while True:
-            # packed_results = result_queue.get()
+            packed_results = result_queue.get()
             packed_frames = visualize_queue.get()
             if packed_frames["Process"] == "Odometer":
                 cv2.imshow("Odometer | Tracking", packed_frames["result"])
