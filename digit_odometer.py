@@ -156,6 +156,8 @@ class Odometer:
                         self.T_sum[1],
                     )
                     rect_gelsight.set_transform(M)
+                    center_gelsight = M.transform_point(rect_gelsight.get_center())
+                    ax.scatter(center_gelsight[0], center_gelsight[1], s=2, c="yellow")
                     plt.pause(0.001)
 
                     if self.cms == "turnL_clock":
