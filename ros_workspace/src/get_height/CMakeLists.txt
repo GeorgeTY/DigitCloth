@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   Height.msg
+  Odometer_result.msg
 )
 
 generate_messages(

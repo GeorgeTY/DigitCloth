@@ -1,9 +1,9 @@
 # for blobDetector
 minThreshold = 0
 maxThreshold = 255
-minArea = 5
+minArea = 10
 maxArea = 80
-minCircularity = 0.7
+minCircularity = 0.5
 minConvexity = 0.8
 minInertiaRatio = 0.01
 

@@ -82,7 +82,7 @@ void hd_drive::Finger_end()
     {
         for (int i = 0; i < 3; ++i)
         {
-            sms_.WritePosEx(ID_L_[i], 2300, 200);
+            sms_.WritePosEx(ID_L_[i], 1000, 50);
             // sms_.EnableTorque(ID_L_[i],0);//1:使能扭矩；0：释放扭矩****如果关节回位还没有完成就释放扭矩使能会导致异常
         }
         cout << "Finger_L return homePos !!!" << endl;
@@ -91,7 +91,7 @@ void hd_drive::Finger_end()
     {
         for (int i = 0; i < 3; ++i)
         {
-            sms_.WritePosEx(ID_R_[i], 2300, 200);
+            sms_.WritePosEx(ID_R_[i], 1000, 50);
             // sms_.EnableTorque(ID_R_[i],0);
         }
         cout << "Finger_R return homePos !!!" << endl;

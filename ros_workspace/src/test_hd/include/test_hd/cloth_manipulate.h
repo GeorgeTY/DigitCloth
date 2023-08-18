@@ -10,6 +10,7 @@
 #include <string>
 #include "hd_servo/EndPos.h"
 #include "get_height/Height.h"
+#include "get_height/Odometer_result.h"
 #include "test_hd/state.h"
 
 // #define COUNT_MODE 10//总计运动十次，用于测量移动距离
@@ -27,7 +28,7 @@
 #define InitR_PosAngle 0.0
 #define Modify 0.065
 #define frequency 15
-#define Target_height 15 // 0.5
+#define Target_height 12000 // 0.5
 #define Theta_threshold 50.0
 #define w_deg 5.0
 #define X_Threshold (0 + 10)
@@ -88,7 +89,7 @@ public:
     ~Move_cloth(){};
     void Init(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R);
     void Set_MoveDistance_in(float distance, hd_servo::EndPos &msg_L);
-    void Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, get_height::Height &current_height);
+    void Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, get_height::Height &current_height, get_height::Odometer_result &odometer_result);
 
     void Set_MoveDistance_out(float distance, hd_servo::EndPos &msg_L);
     void Move_Cloth_out(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, get_height::Height &current_height);

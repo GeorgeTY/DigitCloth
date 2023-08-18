@@ -1,1 +1,0 @@
-string which_digit

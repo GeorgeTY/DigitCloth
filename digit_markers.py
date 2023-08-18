@@ -61,9 +61,12 @@ class Markers:  # Tracking + Marker Segment + Edge Detection + Force Detection
         keypoints, self.frame_curr_with_keypoints = dotDetection(self.blob_detector, frame)
         if self.is_init:
             # Capture the first frame and find the initial keypoints
+            keypoints = np.loadtxt("keypoints/keypoints_001.txt", dtype=np.float32)
+            self.init_keypoints = keypoints
             keypoint_count = len(keypoints)
             # (num_points, 1, 2)
-            keypoints = np.array([[p.pt[0], p.pt[1]] for p in keypoints], dtype=np.float32)
+            # keypoints = np.array([[p.pt[0], p.pt[1]] for p in keypoints], dtype=np.float32)
+            # np.savetxt("keypoints.txt", keypoints, fmt="%f")
             keypoints_mask = np.ones((keypoint_count,), dtype=np.int8)
 
             self.keypoints_queue.append(keypoints)
@@ -130,7 +133,6 @@ class Markers:  # Tracking + Marker Segment + Edge Detection + Force Detection
         tris = self.tris_init
         area = self.area_queue[-1]
         area_diff = self.area_diff_queue[-1]
-        print(keypoints.shape, tris.simplices.shape, area.shape, area_diff.shape)
         tic = time.time()
 
         tris_selected = area > area_threshold
@@ -188,11 +190,29 @@ class Markers:  # Tracking + Marker Segment + Edge Detection + Force Detection
 
         print("Edges: Detect Time: ", time.time() - tic) if self.is_timing else None
 
-    def force(self, frame):
-        # Temporary Implementation
-        canny = cv2.Canny(frame, 100, 200)
-        mean = cv2.meanStdDev(canny)  # TODO: ros comms
-        return mean
+    def force(self):
+        import pycpd
+
+        cpd_tolerance = 0.05  # 0.001
+        cpd_alpha = 0.07  # 2
+        cpd_beta = 40  # 2
+        cpd_sigma2 = 67
+
+        reg = pycpd.DeformableRegistration(
+            **{
+                "X": self.init_keypoints,
+                "Y": self.keypoints_queue[-1],
+                "tolerance": cpd_tolerance,
+                "sigma2": cpd_sigma2,
+            },
+            alpha=cpd_alpha,
+            beta=cpd_beta,
+        )
+        TY, (G, W) = reg.register()
+
+        # print("G: ", G, ", W: ", W)
+        # sys.stdout.write("G: " + str(G) + ", W: " + str(W) + "\r")
+        # return G, W
 
     def visualize(self, output_queue=None):
         """Visualize the keypoints movement on the current frame."""
@@ -309,13 +329,12 @@ class Markers:  # Tracking + Marker Segment + Edge Detection + Force Detection
         self.segment(is_init=True)
 
         while True:
-            print("Markers: frame_queue size: ", frame_queue.qsize())
             frame = frame_queue.get()
 
             self.track(frame)
             self.segment(is_init=False)
             self.edge()
-            self.force(frame)
+            self.force()
 
             if is_init:
                 self.keypoints_queue.clear()

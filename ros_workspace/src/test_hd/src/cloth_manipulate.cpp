@@ -2,24 +2,24 @@
 
 using namespace std;
 
-vector<float> Calculate_SubHeight(const get_height::Height &current_height)
-{
-    vector<float> SubHeight(6, 0.0); // 将传感器数据初步分为6个区数据,传感器数据为6*3
-    SubHeight[0] = current_height.height_data0[0] + current_height.height_data0[1] + current_height.height_data0[2];
-    SubHeight[1] = current_height.height_data1[0] + current_height.height_data1[1] + current_height.height_data1[2];
-    SubHeight[2] = current_height.height_data2[0] + current_height.height_data2[1] + current_height.height_data2[2];
-    SubHeight[3] = current_height.height_data3[0] + current_height.height_data3[1] + current_height.height_data3[2];
-    SubHeight[4] = current_height.height_data4[0] + current_height.height_data4[1] + current_height.height_data4[2];
-    SubHeight[5] = current_height.height_data5[0] + current_height.height_data5[1] + current_height.height_data5[2];
-    // ROS_INFO("Sub0: %lf", SubHeight[0]);
-    // ROS_INFO("Sub1: %lf", SubHeight[1]);
-    // ROS_INFO("Sub2: %lf", SubHeight[2]);
-    // ROS_INFO("Sub3: %lf", SubHeight[3]);
-    // ROS_INFO("Sub4: %lf", SubHeight[4]);
-    // ROS_INFO("Sub5: %lf", SubHeight[5]);
+// vector<float> Calculate_SubHeight(const get_height::Height &current_height)
+// {
+//     vector<float> SubHeight(6, 0.0); // 将传感器数据初步分为6个区数据,传感器数据为6*3
+//     SubHeight[0] = current_height.height_data0[0] + current_height.height_data0[1] + current_height.height_data0[2];
+//     SubHeight[1] = current_height.height_data1[0] + current_height.height_data1[1] + current_height.height_data1[2];
+//     SubHeight[2] = current_height.height_data2[0] + current_height.height_data2[1] + current_height.height_data2[2];
+//     SubHeight[3] = current_height.height_data3[0] + current_height.height_data3[1] + current_height.height_data3[2];
+//     SubHeight[4] = current_height.height_data4[0] + current_height.height_data4[1] + current_height.height_data4[2];
+//     SubHeight[5] = current_height.height_data5[0] + current_height.height_data5[1] + current_height.height_data5[2];
+//     // ROS_INFO("Sub0: %lf", SubHeight[0]);
+//     // ROS_INFO("Sub1: %lf", SubHeight[1]);
+//     // ROS_INFO("Sub2: %lf", SubHeight[2]);
+//     // ROS_INFO("Sub3: %lf", SubHeight[3]);
+//     // ROS_INFO("Sub4: %lf", SubHeight[4]);
+//     // ROS_INFO("Sub5: %lf", SubHeight[5]);
 
-    return SubHeight;
-}
+//     return SubHeight;
+// }
 void Move_cloth::Init(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R)
 {
     flag_ = init_position;
@@ -93,18 +93,12 @@ void Move_cloth::Set_MoveDistance_out(float distance, hd_servo::EndPos &msg_L)
     return;
 }
 
-void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, get_height::Height &current_height)
+void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R, get_height::Height &current_height, get_height::Odometer_result &odometer_result)
 {
 
     /*digit力反馈情况*/
-    vector<float> sub_height = Calculate_SubHeight(current_height);
-    sum_height = accumulate(sub_height.begin(), sub_height.end(), 0.0);
-    upArea_height = accumulate(sub_height.begin(), sub_height.begin() + 4, 0.0);
-    downArea_height = accumulate(sub_height.begin() + 4, sub_height.end(), 0.0);
-    sum_height = abs(sum_height);
+    sum_height = current_height.contact_check;
     ROS_INFO("Sum_force: %lf", sum_height);
-    // ROS_INFO("Up_force: %lf",upArea_height);
-    // ROS_INFO("Down_force: %lf",downArea_height);
 
     E1 = E2;
     E2 = E3;
@@ -123,11 +117,13 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R,
     case force_control:
         ROS_INFO("force_control");
         /*在力控时很容易出现对不准失控的情况，所以力控过程要将手指对正，然后校正x*/
-        if (msg_R.X_Axis < X_Threshold) // 保护硅胶
-        {
-            ROS_INFO("Threshold Reached! Exiting Force Control");
-            flag_ = init_Pos_after_force;
-        }
+        // if (msg_R.X_Axis < X_Threshold) // 保护硅胶
+        // {
+        //     ROS_INFO("Threshold Reached! Exiting Force Control");
+        //     // sleep for 10 seconds
+        //     ros::Duration(10).sleep();
+        //     flag_ = init_Pos_after_force;
+        // }
         if ((sum_height - init_sum_height) < target_height)
         {
             /*力控*/
@@ -136,6 +132,7 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R,
         }
         else
         {
+            ros::Duration(10).sleep();
             flag_ = init_Pos_after_force;
             init_begin = ros::Time::now();
         }
@@ -155,6 +152,7 @@ void Move_cloth::Move_Cloth_in(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R,
     case turnL_clock:
         ROS_INFO("turnL_clock");
         action1(msg_L, msg_R, deta_theta);
+        ROS_INFO("Odometer: %lf", odometer_result.T_sum[0]);
 
         if (msg_L.Z_Angle > (theta_threshold / 2))
             flag_ = moveL_up;
@@ -202,10 +200,7 @@ void Move_cloth::Move_Cloth_out(hd_servo::EndPos &msg_L, hd_servo::EndPos &msg_R
 {
 
     /*digit力反馈情况*/
-    vector<float> sub_height = Calculate_SubHeight(current_height);
-    sum_height = accumulate(sub_height.begin(), sub_height.end(), 0.0);
-    upArea_height = accumulate(sub_height.begin(), sub_height.begin() + 4, 0.0);
-    downArea_height = accumulate(sub_height.begin() + 4, sub_height.end(), 0.0);
+    sum_height = current_height.contact_check;
     ROS_INFO("Sum_force: %lf", sum_height);
     // ROS_INFO("Up_force: %lf",upArea_height);
     // ROS_INFO("Down_force: %lf",downArea_height);

@@ -7,6 +7,7 @@
 #include "cloth_manipulate.h"
 #include "hd_servo/EndPos.h"
 #include "get_height/Height.h"
+#include "get_height/Odometer_result.h"
 #include "test_hd/state.h"
 
 using namespace std;
@@ -15,6 +16,12 @@ void Digit_callback(const get_height::Height::ConstPtr &msg, get_height::Height 
 {
     // ROS_INFO("Callback: get digit info !");
     current_height = *msg;
+    return;
+}
+
+void Odometer_callback(const get_height::Odometer_result::ConstPtr &msg, get_height::Odometer_result &odometer_result)
+{
+    odometer_result = *msg;
     return;
 }
 
@@ -38,9 +45,12 @@ int main(int argc, char **argv)
     test_hd::state cloth_manipulation_state;
 
     get_height::Height current_height;
+    get_height::Odometer_result odometer_result;
     /*Ldigit_height现被安装在Finger_R*/
-    ros::Subscriber DigitL_sub = nh.subscribe<get_height::Height>("/Ldigit_height", 1, boost::bind(&Digit_callback, _1, ref(current_height)));
-    ros::Subscriber DigitR_sub = nh.subscribe<get_height::Height>("/Rdigit_height", 1, boost::bind(&Digit_callback, _1, ref(current_height)));
+    // ros::Subscriber DigitL_sub = nh.subscribe<get_height::Height>("/Ldigit_height", 1, boost::bind(&Digit_callback, _1, ref(current_height)));
+    // ros::Subscriber DigitR_sub = nh.subscribe<get_height::Height>("/Rdigit_height", 1, boost::bind(&Digit_callback, _1, ref(current_height)));
+    ros::Subscriber GelSightmini_sub = nh.subscribe<get_height::Height>("/current_height", 1, boost::bind(&Digit_callback, _1, ref(current_height)));
+    ros::Subscriber odometer_sub = nh.subscribe<get_height::Odometer_result>("/odometer_result", 1, boost::bind(&Odometer_callback, _1, ref(odometer_result)));
 
     Move_cloth move_cloth_in;
     move_cloth_in.Init(msg_L, msg_R);
@@ -54,7 +64,7 @@ int main(int argc, char **argv)
         if (ros::Time::now() - start_time < ros::Duration(2))
             continue;
 
-        move_cloth_in.Move_Cloth_in(msg_L, msg_R, current_height);
+        move_cloth_in.Move_Cloth_in(msg_L, msg_R, current_height, odometer_result);
 
         /*布料操作状态，共有几种：
         1)init_position
@@ -75,12 +85,12 @@ int main(int argc, char **argv)
         // ROS_INFO("RX: %lf",msg_R.X_Axis);
         // ROS_INFO("RY: %lf",msg_R.Y_Axis);
         // ROS_INFO("RZ_Angle: %lf",msg_R.Z_Angle);
-        ROS_INFO("first_row_height%lf %lf %lf", current_height.height_data0[0], current_height.height_data0[1], current_height.height_data0[2]);
-        ROS_INFO("second_row_height%lf %lf %lf", current_height.height_data1[0], current_height.height_data1[1], current_height.height_data1[2]);
-        ROS_INFO("third_row_height%lf %lf %lf", current_height.height_data2[0], current_height.height_data2[1], current_height.height_data2[2]);
-        ROS_INFO("forth_row_height%lf %lf %lf", current_height.height_data3[0], current_height.height_data3[1], current_height.height_data3[2]);
-        ROS_INFO("fifth_row_height%lf %lf %lf", current_height.height_data4[0], current_height.height_data4[1], current_height.height_data4[2]);
-        ROS_INFO("sixth_row_height%lf %lf %lf", current_height.height_data5[0], current_height.height_data5[1], current_height.height_data5[2]);
+        // ROS_INFO("first_row_height%lf %lf %lf", current_height.height_data0[0], current_height.height_data0[1], current_height.height_data0[2]);
+        // ROS_INFO("second_row_height%lf %lf %lf", current_height.height_data1[0], current_height.height_data1[1], current_height.height_data1[2]);
+        // ROS_INFO("third_row_height%lf %lf %lf", current_height.height_data2[0], current_height.height_data2[1], current_height.height_data2[2]);
+        // ROS_INFO("forth_row_height%lf %lf %lf", current_height.height_data3[0], current_height.height_data3[1], current_height.height_data3[2]);
+        // ROS_INFO("fifth_row_height%lf %lf %lf", current_height.height_data4[0], current_height.height_data4[1], current_height.height_data4[2]);
+        // ROS_INFO("sixth_row_height%lf %lf %lf", current_height.height_data5[0], current_height.height_data5[1], current_height.height_data5[2]);
 
         CmdR_pub.publish(msg_R);
         CmdL_pub.publish(msg_L);

@@ -10,13 +10,14 @@ def main():
     markers = Markers()
     odometer = Odometer()
 
-    frame_queue = mp.Queue()
+    frame_queue_markers = mp.Queue()
+    frame_queue_odometer = mp.Queue()
     result_queue = mp.Queue()
     visualize_queue = mp.Queue()
 
-    gsmini.run(frame_queue)
-    markers.run(frame_queue, result_queue,visualize_queue)
-    odometer.run(frame_queue, result_queue,visualize_queue)
+    gsmini.run(frame_queue_markers, frame_queue_odometer)
+    markers.run(frame_queue_markers, result_queue, visualize_queue)
+    odometer.run(frame_queue_odometer, result_queue, visualize_queue)
 
     # Visualize
     try:
